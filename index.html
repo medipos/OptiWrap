@@ -1,0 +1,3514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>OptiWrap | Intelligent Food Packaging Decision Support System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#f0fdf4', 100:'#dcfce7', 200:'#bbf7d0', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 800:'#166534', 900:'#14532d' },
+            accent: { 50:'#fffbeb', 100:'#fef3c7', 500:'#f59e0b', 600:'#d97706', 700:'#b45309' },
+            tech: { 50:'#f0f9ff', 100:'#e0f2fe', 600:'#0284c7', 700:'#0369a1', 900:'#0c4a6e' }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans Devanagari', 'system-ui', 'sans-serif'],
+            hindi: ['Noto Sans Devanagari', 'Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 0; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    input[type='range'] { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 9999px; background: #e2e8f0; outline: none; }
+    input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #16a34a; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.25); border: 2px solid #ffffff; }
+    .touch-target { min-height: 48px; min-width: 48px; }
+    @keyframes pulseRing { 0%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(22,163,74,0.7)} 70%{transform:scale(1);box-shadow:0 0 0 14px rgba(22,163,74,0)} 100%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(22,163,74,0)} }
+    .pulse-ring { animation: pulseRing 2s infinite; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .shimmer { background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    @media print {
+      body * { visibility: hidden; }
+      #printable-report, #printable-report * { visibility: visible; }
+      #printable-report { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#16a34a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="OptiWrap">
+</head>
+<body class="min-h-screen flex flex-col antialiased bg-slate-50 text-slate-900 selection:bg-brand-100 selection:text-brand-900 pb-20 sm:pb-0">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
+
+  <!-- TOP GLOBAL HEADER BAR -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between">
+      <!-- App Brand Title -->
+      <div class="flex items-center space-x-2.5 cursor-pointer" onclick="app.navigate('home')">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-brand-600/30">
+          🌱
+        </div>
+        <div>
+          <span class="font-extrabold text-lg sm:text-xl text-slate-900 tracking-tight flex items-center gap-1.5">
+            OptiWrap
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase transition-all" id="badge-mode">Simple</span>
+          </span>
+          <p class="text-[10px] text-slate-500 font-medium leading-none" id="txt-subtag">Food Packaging Decision Support</p>
+        </div>
+      </div>
+
+      <!-- Right Action Controls -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Expert / Simple Mode Toggle -->
+        <button onclick="app.toggleExpertMode()" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all flex items-center gap-1">
+          <span id="txt-mode-btn">⚙️ Expert Mode</span>
+        </button>
+
+        <!-- Bilingual Language Switcher -->
+        <button onclick="app.toggleLanguage()" class="touch-target px-3 py-1.5 rounded-full bg-slate-100 hover:bg-brand-50 border border-slate-200/80 text-xs sm:text-sm font-bold text-slate-800 transition-all flex items-center gap-1.5 shadow-xs" title="Switch Language">
+          <span class="text-sm">🌐</span>
+          <span id="lang-btn-text">हिंदी</span>
+        </button>
+
+        <!-- Settings / API Key Modal Button -->
+        <button onclick="app.openSettingsModal()" class="touch-target p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all" title="Settings & Free AI API">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP ROUTING CONTAINER -->
+  <main id="app-root" class="flex-grow max-w-5xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6"></main>
+
+  <!-- MOBILE BOTTOM NAVIGATION (THUMB ACCESSIBLE, MAX 5 ITEMS) -->
+  <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-2 py-1.5 flex justify-around items-center shadow-lg">
+    <button onclick="app.navigate('home')" class="flex flex-col items-center py-1 text-slate-600 hover:text-brand-600">
+      <span class="text-lg">🏠</span>
+      <span class="text-[10px] font-bold" id="nav-home">Home</span>
+    </button>
+    <button onclick="app.startNewCheck()" class="flex flex-col items-center py-1 text-brand-600 font-bold">
+      <span class="text-lg">⚡</span>
+      <span class="text-[10px]" id="nav-check">New Check</span>
+    </button>
+    <button onclick="app.navigate('history')" class="flex flex-col items-center py-1 text-slate-600 hover:text-brand-600">
+      <span class="text-lg">📋</span>
+      <span class="text-[10px] font-bold" id="nav-history">History</span>
+    </button>
+    <button onclick="app.openOptiBot()" class="flex flex-col items-center py-1 text-slate-600 hover:text-brand-600">
+      <span class="text-lg">🤖</span>
+      <span class="text-[10px] font-bold" id="nav-bot">OptiBot</span>
+    </button>
+    <button onclick="app.toggleLanguage()" class="flex flex-col items-center py-1 text-slate-600 hover:text-brand-600">
+      <span class="text-lg">🌐</span>
+      <span class="text-[10px] font-bold" id="nav-lang">हिंदी</span>
+    </button>
+  </nav>
+
+  <!-- FLOATING ACTION BUTTON (OPTIBOT) FOR DESKTOP -->
+  <div id="fab-container" class="hidden sm:block fixed bottom-6 right-6 z-50">
+    <button onclick="app.openOptiBot()" class="touch-target w-14 h-14 rounded-full bg-brand-600 hover:bg-brand-700 text-white shadow-xl flex items-center justify-center pulse-ring hover:scale-105 active:scale-95 transition-all" title="Ask OptiBot AI Assistant">
+      <span class="text-2xl">🤖</span>
+      <span class="absolute -top-1 -right-1 bg-amber-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shadow-xs">AI</span>
+    </button>
+  </div>
+
+  <!-- MODAL: OPTIBOT CONTEXT-AWARE CONVERSATIONAL ASSISTANT -->
+  <div id="modal-optibot" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-lg h-[85vh] sm:h-[620px] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-[slideUp_0.25s_ease-out]">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-brand-700 to-brand-800 text-white p-4 flex items-center justify-between shadow-xs">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-xl">🤖</div>
+          <div>
+            <h3 class="font-extrabold text-sm leading-tight flex items-center gap-1.5">
+              OptiBot AI
+              <span class="bg-brand-500 text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">Free Assistant</span>
+            </h3>
+            <p class="text-[10px] text-brand-100" id="bot-context-label">Context: Ready to assist</p>
+          </div>
+        </div>
+        <button onclick="app.closeOptiBot()" class="touch-target p-1.5 text-white/80 hover:text-white rounded-lg">✕</button>
+      </div>
+
+      <!-- Messages container -->
+      <div id="optibot-messages" class="flex-grow overflow-y-auto p-4 space-y-3 bg-slate-50/70 text-xs sm:text-sm"></div>
+
+      <!-- Suggestion Quick Chips -->
+      <div class="px-4 py-2 bg-white border-t border-slate-100 flex gap-1.5 overflow-x-auto no-scrollbar" id="bot-chips"></div>
+
+      <!-- Input box -->
+      <form onsubmit="app.sendBotMessage(event)" class="p-3 bg-white border-t border-slate-200 flex items-center space-x-2">
+        <button type="button" onclick="app.toggleVoiceInput('bot')" id="btn-bot-voice" class="touch-target p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Voice Input">
+          🎤
+        </button>
+        <input type="text" id="bot-input" placeholder="Ask about OTR, FSSAI rules, shelf life..." class="flex-grow px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+        <button type="submit" class="touch-target px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-sm">
+          Send
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SETTINGS & FREE API KEYS -->
+  <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-extrabold text-slate-800 text-base flex items-center gap-2">
+          <span>⚙️</span> <span id="txt-settings-title">App Settings & AI Engine</span>
+        </h3>
+        <button onclick="app.closeSettingsModal()" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+      </div>
+
+      <!-- Security Warning Notice -->
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px] leading-relaxed">
+        <strong>⚠️ Security Notice:</strong> API keys are stored in your browser's local storage and sent directly from the client. For public kiosks or production deployments, use a secure backend proxy URL below.
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed" id="txt-settings-desc">
+        OptiWrap operates 100% free with deterministic scientific kinetics. You can optionally connect your free-tier Google Gemini or Groq API key for conversational explanations.
+      </p>
+
+      <div class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Google Gemini API Key (Optional)</label>
+          <input type="password" id="cfg-gemini-key" placeholder="AIzaSy..." class="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs font-mono" />
+          <span class="text-[10px] text-slate-400">Get free key at aistudio.google.com (Free tier, no credit card)</span>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Gemini Model Name</label>
+          <input type="text" id="cfg-gemini-model" placeholder="gemini-2.5-flash" class="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs font-mono" />
+          <span class="text-[10px] text-slate-400">Default: gemini-2.5-flash (or gemini-2.0-flash / gemini-1.5-flash-latest)</span>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Groq API Key (Optional)</label>
+          <input type="password" id="cfg-groq-key" placeholder="gsk_..." class="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs font-mono" />
+          <span class="text-[10px] text-slate-400">Fast open-source Llama-3 inference (Free tier)</span>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Groq Model Name</label>
+          <input type="text" id="cfg-groq-model" placeholder="llama-3.3-70b-versatile" class="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs font-mono" />
+          <span class="text-[10px] text-slate-400">Default: llama-3.3-70b-versatile (or llama-3.1-8b-instant)</span>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Backend Proxy URL (Optional)</label>
+          <input type="url" id="cfg-proxy-url" placeholder="https://api.yourdomain.com/packaging-chat" class="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs font-mono" />
+          <span class="text-[10px] text-slate-400">If set, AI requests will route through your secure backend proxy instead of direct browser calls.</span>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+        <button onclick="app.saveSettings()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN PRINTABLE CONTAINER FOR PDF REPORT GENERATION -->
+  <div id="printable-report" class="hidden p-8 bg-white text-slate-900"></div>
+
+  <!-- APPLICATION CORE ENGINE SCRIPT -->
+  <script>
+    // ══════════════════════════════════════════════════════════════
+    // 1. COMMODITY DATABASE (LITERATURE GROUNDED BASELINES)
+    // ══════════════════════════════════════════════════════════════
+    const COMMODITIES = {
+      mango: {
+        id: 'mango',
+        aliases: ['mango', 'alphonso', 'aam', 'hapoos', 'hapus', 'mangoes', 'alphonso mango', 'आम', 'अल्फांसो', 'हापूस', 'अल्फांसो आम', 'केसरी आम'],
+        category: 'produce', icon: '🥭',
+        nameEn: 'Alphonso Mango', nameHi: 'अल्फांसो आम',
+        moisture: 82, fat: 0.4, ph: 4.5, resp: 35,
+        safeO2: [3, 5], safeCO2: [5, 8], q10: 2.5,
+        critMoistureLoss: 6.5, oxidationRisk: 'low',
+        spoilageEn: 'Skin shrivelling, fungal anthracnose & over-ripening',
+        spoilageHi: 'छिलके का सिकुड़ना, फंगल संक्रमण और अत्यधिक पकना',
+        baseShelfLifeDays: 7, typicalPackKg: 1.5,
+        defaultStorage: 'chilled', defaultTemp: 13, defaultRH: 85
+      },
+      banana: {
+        id: 'banana',
+        aliases: ['banana', 'robusta', 'kela', 'kele', 'bananas', 'robusta banana', 'केला', 'केले', 'रोबस्टा केला', 'पका केला'],
+        category: 'produce', icon: '🍌',
+        nameEn: 'Robusta Banana', nameHi: 'केला (बनाना)',
+        moisture: 75, fat: 0.3, ph: 5.0, resp: 45,
+        safeO2: [2, 5], safeCO2: [4, 7], q10: 2.8,
+        critMoistureLoss: 5.0, oxidationRisk: 'low',
+        spoilageEn: 'Rapid peel blackening, crown rot & ethylene surge',
+        spoilageHi: 'छिलके का काला पड़ना, डंठल सड़न और एथिलीन वृद्धि',
+        baseShelfLifeDays: 5, typicalPackKg: 1.0,
+        defaultStorage: 'ambient', defaultTemp: 16, defaultRH: 85
+      },
+      tomato: {
+        id: 'tomato',
+        aliases: ['tomato', 'tomatoes', 'tamatar', 'tamatar hybrid', 'hybrid tomato', 'टमाटर', 'हाइब्रिड टमाटर', 'लाल टमाटर'],
+        category: 'produce', icon: '🍅',
+        nameEn: 'Hybrid Tomato', nameHi: 'हाइब्रिड टमाटर',
+        moisture: 94, fat: 0.2, ph: 4.3, resp: 28,
+        safeO2: [3, 5], safeCO2: [3, 5], q10: 2.2,
+        critMoistureLoss: 7.0, oxidationRisk: 'low',
+        spoilageEn: 'Skin softening, moisture leakage & Rhizopus rot',
+        spoilageHi: 'टमाटर का पिलपिला होना, पानी छूटना और सड़न',
+        baseShelfLifeDays: 6, typicalPackKg: 1.0,
+        defaultStorage: 'ambient', defaultTemp: 18, defaultRH: 80
+      },
+      spinach: {
+        id: 'spinach',
+        aliases: ['spinach', 'palak', 'saag', 'greens', 'leafy greens', 'hari sabzi', 'पालक', 'साग', 'हरी पत्तेदार सब्जियां', 'पालक साग'],
+        category: 'produce', icon: '🥬',
+        nameEn: 'Spinach / Leafy Greens', nameHi: 'पालक / हरी पत्तेदार सब्जियां',
+        moisture: 92, fat: 0.4, ph: 6.2, resp: 90,
+        safeO2: [7, 10], safeCO2: [5, 10], q10: 3.0,
+        critMoistureLoss: 4.0, oxidationRisk: 'low',
+        spoilageEn: 'Rapid leaf wilting, yellowing & bacterial slime',
+        spoilageHi: 'पत्तियों का मुरझाना, पीला पड़ना और सड़न',
+        baseShelfLifeDays: 2, typicalPackKg: 0.25,
+        defaultStorage: 'chilled', defaultTemp: 4, defaultRH: 95
+      },
+      onion_potato: {
+        id: 'onion_potato',
+        aliases: ['onion', 'potato', 'pyaz', 'aloo', 'alu', 'aalu', 'kanda', 'batata', 'onions', 'potatoes', 'प्याज', 'आलू', 'कांदा', 'बटाटा', 'आलू प्याज'],
+        category: 'produce', icon: '🧅',
+        nameEn: 'Onion / Potato', nameHi: 'प्याज / आलू',
+        moisture: 84, fat: 0.1, ph: 5.8, resp: 8,
+        safeO2: [15, 20], safeCO2: [0, 2], q10: 1.8,
+        critMoistureLoss: 8.0, oxidationRisk: 'low',
+        spoilageEn: 'Internal sprouting, root growth & black mould',
+        spoilageHi: 'अंकुरण फूटना, जड़ें निकलना और काली फफूंद',
+        baseShelfLifeDays: 30, typicalPackKg: 5.0,
+        defaultStorage: 'ambient', defaultTemp: 26, defaultRH: 65
+      },
+      paneer: {
+        id: 'paneer',
+        aliases: ['paneer', 'cottage cheese', 'panir', 'fresh paneer', 'cheese', 'chhena', 'पनीर', 'ताजा पनीर', 'छेना'],
+        category: 'dairy', icon: '🧀',
+        nameEn: 'Fresh Paneer', nameHi: 'ताजा पनीर',
+        moisture: 54, fat: 22, ph: 5.8, resp: 0,
+        safeO2: [0, 0.5], safeCO2: [20, 35], q10: 3.2,
+        critMoistureLoss: 3.5, oxidationRisk: 'high',
+        spoilageEn: 'Surface slime, souring from lactic bacteria & fat rancidity',
+        spoilageHi: 'सतह पर चिपचिपापन, खट्टापन और वसा का सड़ना (रैंसिडिटी)',
+        baseShelfLifeDays: 2, typicalPackKg: 0.2,
+        defaultStorage: 'chilled', defaultTemp: 4, defaultRH: 85
+      },
+      mithai: {
+        id: 'mithai',
+        aliases: ['mithai', 'sweets', 'peda', 'mawa', 'khoya', 'barfi', 'milk sweets', 'laddu', 'gulab jamun', 'मिठाई', 'पेड़ा', 'मावा', 'खोया', 'बर्फी', 'दूध मिठाई'],
+        category: 'dairy', icon: '🍬',
+        nameEn: 'Milk Sweets (Mawa / Peda)', nameHi: 'दूध मिठाई (मावा / पेड़ा)',
+        moisture: 18, fat: 16, ph: 6.1, resp: 0,
+        safeO2: [0, 1.0], safeCO2: [20, 40], q10: 2.4,
+        critMoistureLoss: 4.0, oxidationRisk: 'high',
+        spoilageEn: 'Fungal mould spots, drying out & ghee off-flavor',
+        spoilageHi: 'सफेद फफूंद लगना, सूखना और घी का स्वाद बिगड़ना',
+        baseShelfLifeDays: 8, typicalPackKg: 0.5,
+        defaultStorage: 'ambient', defaultTemp: 25, defaultRH: 60
+      },
+      ghee: {
+        id: 'ghee',
+        aliases: ['ghee', 'butter', 'butterfat', 'makhan', 'desi ghee', 'clarified butter', 'घी', 'देसी घी', 'मक्खन'],
+        category: 'dairy', icon: '🧈',
+        nameEn: 'Desi Ghee / Butterfat', nameHi: 'देसी घी / मक्खन',
+        moisture: 0.5, fat: 99.5, ph: 5.4, resp: 0,
+        safeO2: [0, 0.5], safeCO2: [0, 5], q10: 2.0,
+        critMoistureLoss: 1.0, oxidationRisk: 'critical',
+        spoilageEn: 'Photo-oxidation, metallic rancid taste & peroxide formation',
+        spoilageHi: 'धूप व ऑक्सीजन से कड़वापन और बदबू पैदा होना',
+        baseShelfLifeDays: 180, typicalPackKg: 1.0,
+        defaultStorage: 'ambient', defaultTemp: 25, defaultRH: 50
+      },
+      rice: {
+        id: 'rice',
+        aliases: ['rice', 'chawal', 'basmati', 'basmati rice', 'dhan', 'bhat', 'चावल', 'बासमती', 'बासमती चावल', 'धान'],
+        category: 'grains', icon: '🌾',
+        nameEn: 'Basmati Rice', nameHi: 'बासमती चावल',
+        moisture: 12, fat: 0.6, ph: 6.6, resp: 0,
+        safeO2: [0, 5], safeCO2: [0, 20], q10: 1.5,
+        critMoistureLoss: 3.5, oxidationRisk: 'low',
+        spoilageEn: 'Weevil insect infestation, moisture clumping & yellowing',
+        spoilageHi: 'घुन/कीड़े लगना, नमी सोखकर गांठ बनना और रंग बदलना',
+        baseShelfLifeDays: 365, typicalPackKg: 5.0,
+        defaultStorage: 'ambient', defaultTemp: 28, defaultRH: 65
+      },
+      atta: {
+        id: 'atta',
+        aliases: ['atta', 'wheat', 'gehu', 'flour', 'wheat flour', 'aata', 'chakki atta', 'गेहूं', 'आटा', 'गेहूं का आटा'],
+        category: 'grains', icon: '🍞',
+        nameEn: 'Whole Wheat Atta', nameHi: 'गेहूं का आटा',
+        moisture: 13, fat: 1.8, ph: 6.3, resp: 0,
+        safeO2: [0, 3], safeCO2: [0, 10], q10: 1.8,
+        critMoistureLoss: 2.5, oxidationRisk: 'medium',
+        spoilageEn: 'Moisture caking, lipase rancidity & insect larvae',
+        spoilageHi: 'आटे में ढेले बनना, कड़वापन आना और कीड़े पड़ना',
+        baseShelfLifeDays: 90, typicalPackKg: 5.0,
+        defaultStorage: 'ambient', defaultTemp: 27, defaultRH: 65
+      },
+      toor_dal: {
+        id: 'toor_dal',
+        aliases: ['toor dal', 'arhar dal', 'dal', 'pulses', 'toor', 'arhar', 'lentils', 'yellow dal', 'तूर दाल', 'अरहर दाल', 'दाल', 'दलहन'],
+        category: 'grains', icon: '🥣',
+        nameEn: 'Toor Dal / Pulses', nameHi: 'तूर दाल / दलहन',
+        moisture: 10.5, fat: 1.4, ph: 6.5, resp: 0,
+        safeO2: [0, 5], safeCO2: [0, 20], q10: 1.6,
+        critMoistureLoss: 3.0, oxidationRisk: 'low',
+        spoilageEn: 'Pulse beetle (bruchid) infestation & moisture discoloration',
+        spoilageHi: 'दाल में छेद करने वाले कीड़े और नमी से काला पड़ना',
+        baseShelfLifeDays: 240, typicalPackKg: 1.0,
+        defaultStorage: 'ambient', defaultTemp: 28, defaultRH: 60
+      },
+      spices: {
+        id: 'spices',
+        aliases: ['spices', 'chilli', 'mirch', 'masala', 'red chilli', 'haldi', 'dhaniya', 'spices powder', 'मसाले', 'मिर्च', 'लाल मिर्च', 'मसाला', 'हल्दी', 'धनिया'],
+        category: 'grains', icon: '🌶️',
+        nameEn: 'Ground Red Chilli / Spices', nameHi: 'पिसी लाल मिर्च / मसाले',
+        moisture: 9, fat: 11, ph: 5.6, resp: 0,
+        safeO2: [0, 1.0], safeCO2: [0, 5], q10: 2.2,
+        critMoistureLoss: 2.0, oxidationRisk: 'high',
+        spoilageEn: 'Loss of pungency/aroma, caking & color bleaching by light',
+        spoilageHi: 'तीखापन व खुशबू उड़ना, गांठें बनना और रंग उड़ना',
+        baseShelfLifeDays: 180, typicalPackKg: 0.25,
+        defaultStorage: 'ambient', defaultTemp: 26, defaultRH: 55
+      },
+      namkeen: {
+        id: 'namkeen',
+        aliases: ['namkeen', 'bhujia', 'mixture', 'sev', 'chips', 'farsan', 'fried snacks', 'नमकीन', 'भुजिया', 'सेव', 'फरसाण', 'मिक्सचर'],
+        category: 'snacks', icon: '🍿',
+        nameEn: 'Fried Namkeen / Bhujia', nameHi: 'तली नमकीन / भुजिया',
+        moisture: 2.5, fat: 34, ph: 6.0, resp: 0,
+        safeO2: [0, 0.8], safeCO2: [0, 5], q10: 2.4,
+        critMoistureLoss: 1.8, oxidationRisk: 'critical',
+        spoilageEn: 'Loss of crispness (sogginess) & rancid cooking oil smell',
+        spoilageHi: 'सीलन आना (कुरकुरापन खोना) और तेल की बास/दुर्गंध',
+        baseShelfLifeDays: 45, typicalPackKg: 0.2,
+        defaultStorage: 'ambient', defaultTemp: 27, defaultRH: 60
+      },
+      makhana: {
+        id: 'makhana',
+        aliases: ['makhana', 'foxnut', 'lotus seeds', 'roasted makhana', 'foxnuts', 'phool makhana', 'मखाना', 'रोस्टेड मखाना', 'फूल मखाना'],
+        category: 'snacks', icon: '⚪',
+        nameEn: 'Roasted Makhana (Foxnuts)', nameHi: 'रोस्टेड मखाना',
+        moisture: 3.0, fat: 1.2, ph: 6.3, resp: 0,
+        safeO2: [0, 2.0], safeCO2: [0, 10], q10: 1.9,
+        critMoistureLoss: 2.2, oxidationRisk: 'low',
+        spoilageEn: 'Moisture softening (rubbery texture) & crispness loss',
+        spoilageHi: 'सीलन से रबड़ जैसा खिंचना और कुरकुरापन खत्म होना',
+        baseShelfLifeDays: 90, typicalPackKg: 0.1,
+        defaultStorage: 'ambient', defaultTemp: 27, defaultRH: 55
+      },
+      pickles: {
+        id: 'pickles',
+        aliases: ['pickle', 'pickles', 'achar', 'aachar', 'mango pickle', 'lime pickle', 'achaar', 'अचार', 'आम का अचार', 'नींबू का अचार'],
+        category: 'snacks', icon: '🫙',
+        nameEn: 'Mango / Lime Pickle', nameHi: 'आम/नींबू का अचार',
+        moisture: 42, fat: 28, ph: 3.2, resp: 0,
+        safeO2: [0, 1.0], safeCO2: [0, 5], q10: 1.7,
+        critMoistureLoss: 6.0, oxidationRisk: 'high',
+        spoilageEn: 'Top surface white yeast layer, oil darkening & acid breakdown',
+        spoilageHi: 'सतह पर सफेद फफूंद (यीस्ट), तेल का काला पड़ना',
+        baseShelfLifeDays: 365, typicalPackKg: 1.0,
+        defaultStorage: 'ambient', defaultTemp: 28, defaultRH: 65
+      },
+      dry_fruits: {
+        id: 'dry_fruits',
+        aliases: ['dry fruits', 'badam', 'kaju', 'cashew', 'almond', 'nuts', 'mewa', 'walnut', 'akhrot', 'पिस्ता', 'मेवा', 'बादाम', 'काजू', 'ड्राई फ्रूट्स'],
+        category: 'snacks', icon: '🥜',
+        nameEn: 'Almonds & Cashews', nameHi: 'बादाम और काजू',
+        moisture: 4.0, fat: 50, ph: 6.1, resp: 0,
+        safeO2: [0, 1.0], safeCO2: [0, 15], q10: 2.1,
+        critMoistureLoss: 2.5, oxidationRisk: 'critical',
+        spoilageEn: 'Nut lipid oxidation, bitter taste & softening',
+        spoilageHi: 'वसा का ऑक्सीकरण, कड़वापन और सीलन',
+        baseShelfLifeDays: 120, typicalPackKg: 0.5,
+        defaultStorage: 'ambient', defaultTemp: 25, defaultRH: 55
+      }
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // 2. MATERIALS LIBRARY (≥20 MATERIALS WITH FULL COMPREHENSIVE SPECS)
+    // ══════════════════════════════════════════════════════════════
+    const MATERIALS = [
+      {
+        id: 'bopp_met',
+        nameEn: 'Metallized BOPP / LLDPE Pouch',
+        nameHi: 'मेटलाइज्ड BOPP / LLDPE पाउच',
+        layers: 'Met-BOPP 12µm / Adhesive / LLDPE 25µm',
+        thicknessUm: 38,
+        otr: 2.2, // cc/m2.day
+        wvtr: 1.1, // g/m2.day
+        co2tr: 12,
+        sealTemp: '125 - 145 °C', sealStrength: '28 N/15mm (Hermetic heat seal)',
+        tensileStrength: '135 MPa', punctureStrength: '26 N',
+        lightBarrier: '99.5% (High opacity)', transparency: 'Opaque silver',
+        costPerPack: 2.4, minOrderQty: '500 pouches',
+        ecoScore: 58, eprCategory: 'Category II (Flexible Multi-layer)',
+        recyclability: '60% (Chemical delamination)', compostability: 'Non-compostable',
+        suitableProduce: false, suitableSnacks: true, suitableGrains: true, suitableDairy: true,
+        prosEn: 'Superb moisture & light barrier at affordable Indian market cost',
+        prosHi: 'सस्ती लागत पर नमी और प्रकाश से बेहतरीन सुरक्षा',
+        consEn: 'Multi-layer makes mechanical recycling difficult; not see-through',
+        consHi: 'पारदर्शी नहीं है; रीसाइक्लिंग के लिए अलग प्रक्रिया चाहिए',
+        isLocal: false
+      },
+      {
+        id: 'al_foil_lam',
+        nameEn: 'PET / Aluminum Foil / PE Tri-Laminate',
+        nameHi: 'एल्युमिनियम फॉयल 3-लेयर लैमिनेट',
+        layers: 'PET 12µm / Pure Al Foil 9µm / LLDPE 50µm',
+        thicknessUm: 72,
+        otr: 0.01,
+        wvtr: 0.01,
+        co2tr: 0.01,
+        sealTemp: '140 - 165 °C', sealStrength: '38 N/15mm (High integrity)',
+        tensileStrength: '165 MPa', punctureStrength: '42 N',
+        lightBarrier: '100% (Complete blackout)', transparency: 'Total opaque',
+        costPerPack: 4.8, minOrderQty: '1000 pouches',
+        ecoScore: 35, eprCategory: 'Category II (Multi-layer plastic with metal)',
+        recyclability: '25% (Specialized pyrolysis/hydrometallurgy)', compostability: 'Non-compostable',
+        suitableProduce: false, suitableSnacks: true, suitableGrains: false, suitableDairy: true,
+        prosEn: 'Zero oxygen and moisture penetration; 12+ months shelf life guarantee',
+        prosHi: 'शून्य ऑक्सीजन व नमी प्रवेश; 1 वर्ष तक खराब न होने की गारंटी',
+        consEn: 'Highest unit cost; cannot see product inside; heavy environmental burden',
+        consHi: 'सबसे महंगा; अंदर का उत्पाद दिखता नहीं; रीसाइक्लिंग कठिन',
+        isLocal: false
+      },
+      {
+        id: 'micro_perf_bopp',
+        nameEn: 'Laser Micro-Perforated Breathable BOPP',
+        nameHi: 'माइक्रो-परफोरेटेड हवादार BOPP फिल्म',
+        layers: 'BOPP Monolayer with 80–120 µm Laser Pores',
+        thicknessUm: 28,
+        otr: 8500, // high breathing
+        wvtr: 32,
+        co2tr: 28000,
+        sealTemp: '115 - 130 °C', sealStrength: '20 N/15mm',
+        tensileStrength: '120 MPa', punctureStrength: '22 N',
+        lightBarrier: '15% (Anti-fog crystal clear)', transparency: '94% Transparent',
+        costPerPack: 1.8, minOrderQty: '300 pouches',
+        ecoScore: 78, eprCategory: 'Category I (Mono-material BOPP)',
+        recyclability: '100% Recyclable in standard PP stream', compostability: 'Non-compostable',
+        suitableProduce: true, suitableSnacks: false, suitableGrains: false, suitableDairy: false,
+        prosEn: 'Prevents produce suffocation & condensation fog while retaining weight',
+        prosHi: 'सब्जियों का दम घुटने से रोकता है और पसीना (कंडेनसेशन) नहीं जमता',
+        consEn: 'Unsuited for fried snacks or dry items due to intentional holes',
+        consHi: 'तली नमकीन या सूखे अनाज के लिए बेकार क्योंकि इसमें सूक्ष्म छेद हैं',
+        isLocal: false
+      },
+      {
+        id: 'evoh_coex',
+        nameEn: 'Co-Extruded PE / EVOH / PE High-Barrier Film',
+        nameHi: 'EVOH हाई-बैरियर पारदर्शी फिल्म',
+        layers: 'LLDPE 22µm / Tie / EVOH 6µm / Tie / LLDPE 22µm',
+        thicknessUm: 55,
+        otr: 0.7,
+        wvtr: 4.2,
+        co2tr: 3.2,
+        sealTemp: '120 - 140 °C', sealStrength: '32 N/15mm',
+        tensileStrength: '48 MPa', punctureStrength: '32 N',
+        lightBarrier: '20% (UV Stabilized)', transparency: '90% Transparent',
+        costPerPack: 3.6, minOrderQty: '500 pouches',
+        ecoScore: 68, eprCategory: 'Category II (Polyolefin compatible)',
+        recyclability: '85% (Recyclable in polyolefin streams per CEFLEX)', compostability: 'Non-compostable',
+        suitableProduce: false, suitableSnacks: true, suitableGrains: false, suitableDairy: true,
+        prosEn: 'See-through clarity with vacuum & MAP suitability for fresh paneer',
+        prosHi: 'पनीर और डेयरी के लिए कांच जैसी पारदर्शिता और शून्य ऑक्सीजन',
+        consEn: 'Moisture sensitivity if outer PE skin is scratched',
+        consHi: 'पानी के सीधे संपर्क से बैरियर थोड़ा घट सकता है',
+        isLocal: false
+      },
+      {
+        id: 'pla_bio',
+        nameEn: 'Certified Compostable PLA Bioplastic Film',
+        nameHi: 'कम्पोस्टेबल PLA बायोप्लास्टिक फिल्म',
+        layers: 'Corn/Cassava Starch Derived Polylactic Acid',
+        thicknessUm: 30,
+        otr: 42,
+        wvtr: 19,
+        co2tr: 160,
+        sealTemp: '95 - 115 °C', sealStrength: '18 N/15mm',
+        tensileStrength: '52 MPa', punctureStrength: '19 N',
+        lightBarrier: '18%', transparency: '91% Transparent glossy',
+        costPerPack: 3.2, minOrderQty: '250 pouches',
+        ecoScore: 96, eprCategory: 'Exempt (Certified Compostable IS 17088)',
+        recyclability: 'Industrial Compostable (100% degrades in 90 days)', compostability: '100% Biodegradable',
+        suitableProduce: true, suitableSnacks: false, suitableGrains: true, suitableDairy: false,
+        prosEn: '100% plant-derived; exempt from plastic ban; degrades into organic manure',
+        prosHi: '100% पौधों से निर्मित; प्लास्टिक बैन से मुक्त; 90 दिन में खाद बनता है',
+        consEn: 'Deforms at heat above 55°C; higher cost than conventional PE',
+        consHi: '55°C से अधिक गर्मी में मुड़ जाता है; सामान्य प्लास्टिक से महंगा',
+        isLocal: false
+      },
+      {
+        id: 'pbat_pla',
+        nameEn: 'PBAT / PLA Flexible Compostable Stand-Up Pouch',
+        nameHi: 'PBAT / PLA बायो-कम्पोस्टेबल स्टैंडअप पाउच',
+        layers: 'PBAT 60% / PLA 40% Co-polymer blend',
+        thicknessUm: 45,
+        otr: 28,
+        wvtr: 16,
+        co2tr: 110,
+        sealTemp: '105 - 120 °C', sealStrength: '24 N/15mm',
+        tensileStrength: '38 MPa', punctureStrength: '28 N',
+        lightBarrier: '40% (Translucent silky matte)', transparency: 'Translucent matte',
+        costPerPack: 4.2, minOrderQty: '200 pouches',
+        ecoScore: 98, eprCategory: 'Exempt (Certified Compostable IS/ISO 17088)',
+        recyclability: 'Home & Industrial Compostable', compostability: '100% Biodegradable',
+        suitableProduce: true, suitableSnacks: true, suitableGrains: true, suitableDairy: false,
+        prosEn: 'Pliable, tear-resistant compostable pouch with zipper seal for premium organics',
+        prosHi: 'मजबूत और लचीला कम्पोस्टेबल पाउच; जैविक उत्पादों के लिए सर्वोत्तम',
+        consEn: 'Limited barrier for >60 days ambient fried snack storage',
+        consHi: '60 दिनों से ज्यादा नमकीन को सीलन से नहीं बचा सकता',
+        isLocal: false
+      },
+      {
+        id: 'cellulose_film',
+        nameEn: 'Regenerated Cellulose Film (NatureFlex™)',
+        nameHi: 'नेचुरल सेल्यूलोज फिल्म (नेचरफ्लेक्स)',
+        layers: 'Pure Wood-Pulp Derived Regenerated Cellulose',
+        thicknessUm: 24,
+        otr: 32,
+        wvtr: 8.5,
+        co2tr: 140,
+        sealTemp: '100 - 125 °C', sealStrength: '19 N/15mm',
+        tensileStrength: '75 MPa', punctureStrength: '24 N',
+        lightBarrier: '12%', transparency: '93% Clear',
+        costPerPack: 3.5, minOrderQty: '250 pouches',
+        ecoScore: 97, eprCategory: 'Exempt (Bio-based wood pulp)',
+        recyclability: 'Marine degradable & backyard compostable', compostability: '100% Compostable',
+        suitableProduce: true, suitableSnacks: true, suitableGrains: true, suitableDairy: false,
+        prosEn: 'Home compostable, anti-static, breathability for fresh confectionery',
+        prosHi: 'घर में ही 6 सप्ताह में खाद बन जाता है; नमी नियंत्रण उत्तम',
+        consEn: 'Softens in excessive tropical monsoon humidity',
+        consHi: 'भारी बारिश और उमस में फिल्म थोड़ी नरम पड़ सकती है',
+        isLocal: false
+      },
+      {
+        id: 'kraft_liner',
+        nameEn: 'Multi-Wall Kraft Paper with Bio-PE Moisture Liner',
+        nameHi: 'क्राफ्ट पेपर + बायो-पीई लाइनर पाउच',
+        layers: 'Virgin Kraft Paper 70 gsm / Sugarcane Bio-PE 18µm',
+        thicknessUm: 88,
+        otr: 450,
+        wvtr: 18,
+        co2tr: 1200,
+        sealTemp: '115 - 135 °C', sealStrength: '25 N/15mm',
+        tensileStrength: '85 MPa', punctureStrength: '35 N',
+        lightBarrier: '98%', transparency: 'Opaque rustic brown',
+        costPerPack: 2.8, minOrderQty: '200 pouches',
+        ecoScore: 90, eprCategory: 'Paper Mix (Recyclable pulp)',
+        recyclability: '88% Recyclable in paper mills', compostability: 'Partially compostable',
+        suitableProduce: false, suitableSnacks: false, suitableGrains: true, suitableDairy: false,
+        prosEn: 'Natural artisan shelf appeal for organic pulses, flours and jaggery',
+        prosHi: 'दाल, आटा और गुड़ के लिए प्राकृतिक और सुंदर देसी लुक',
+        consEn: 'High gas permeability — unsuited for vacuum or nitrogen flush',
+        consHi: 'गैस आर-पार हो सकती है, इसलिए नमकीन चिप्स में हवा नहीं भर सकते',
+        isLocal: true
+      },
+      {
+        id: 'ldpe_plain',
+        nameEn: 'Virgin LDPE Monolayer Pouch (Low Barrier)',
+        nameHi: 'साधारण LDPE पॉलीथिन पाउच',
+        layers: 'Low Density Polyethylene 50µm',
+        thicknessUm: 50,
+        otr: 2600,
+        wvtr: 17,
+        co2tr: 9500,
+        sealTemp: '110 - 130 °C', sealStrength: '22 N/15mm',
+        tensileStrength: '24 MPa', punctureStrength: '18 N',
+        lightBarrier: '15%', transparency: '88% Translucent',
+        costPerPack: 1.2, minOrderQty: '100 pouches',
+        ecoScore: 50, eprCategory: 'Category I (Mono-material PE > 50µm)',
+        recyclability: '100% Recyclable (Standard kabadiwala/scrap)', compostability: 'Non-compostable',
+        suitableProduce: false, suitableSnacks: false, suitableGrains: true, suitableDairy: false,
+        prosEn: 'Cheapest plastic option, widely available in rural markets',
+        prosHi: 'सबसे सस्ता और हर गांव-कस्बे में आसानी से उपलब्ध',
+        consEn: 'High oxygen permeability allows oil rancidity within 15–20 days',
+        consHi: 'ऑक्सीजन नहीं रोकता, जिससे तली नमकीन व घी 15 दिन में बास मार जाते हैं',
+        isLocal: true
+      },
+      {
+        id: 'hdpe_film',
+        nameEn: 'HDPE Crisp Film Bag',
+        nameHi: 'HDPE मजबूत प्लास्टिक थैली',
+        layers: 'High Density Polyethylene 45µm',
+        thicknessUm: 45,
+        otr: 1500,
+        wvtr: 6.0,
+        co2tr: 4800,
+        sealTemp: '125 - 145 °C', sealStrength: '26 N/15mm',
+        tensileStrength: '42 MPa', punctureStrength: '22 N',
+        lightBarrier: '35%', transparency: 'Milky translucent',
+        costPerPack: 1.4, minOrderQty: '100 pouches',
+        ecoScore: 55, eprCategory: 'Category I (Mono-material HDPE)',
+        recyclability: '100% Recyclable', compostability: 'Non-compostable',
+        suitableProduce: false, suitableSnacks: false, suitableGrains: true, suitableDairy: false,
+        prosEn: 'Good moisture protection at very low unit price for bulk flour/sugar',
+        prosHi: 'कम कीमत पर नमी से अच्छी सुरक्षा, आटा-चीनी के लिए बढ़िया',
+        consEn: 'Crinkly feel, poor gas barrier for snacks or fresh cheese',
+        consHi: 'खड़खड़ाता है और ऑक्सीजन नहीं रोक सकता',
+        isLocal: true
+      },
+      {
+        id: 'bopp_plain',
+        nameEn: 'Clear BOPP Monolayer Film',
+        nameHi: 'साफ पारदर्शी BOPP फिल्म',
+        layers: 'Biaxially Oriented Polypropylene 25µm',
+        thicknessUm: 25,
+        otr: 1800,
+        wvtr: 4.8,
+        co2tr: 5800,
+        sealTemp: '115 - 130 °C', sealStrength: '18 N/15mm',
+        tensileStrength: '130 MPa', punctureStrength: '28 N',
+        lightBarrier: '8%', transparency: '93% Glass-like clarity',
+        costPerPack: 1.5, minOrderQty: '200 pouches',
+        ecoScore: 62, eprCategory: 'Category I (Mono-material PP)',
+        recyclability: '100% Recyclable', compostability: 'Non-compostable',
+        suitableProduce: false, suitableSnacks: false, suitableGrains: true, suitableDairy: false,
+        prosEn: 'Crystal clear gloss showcases grain color and spice cleanliness',
+        prosHi: 'कांच जैसी चमक, जिससे दाल-चावल की साफ-सफाई साफ दिखती है',
+        consEn: 'No oxygen barrier; prone to tear once punctured',
+        consHi: 'ऑक्सीजन बैरियर नहीं है; कट लगने पर आसानी से फट जाता है',
+        isLocal: false
+      },
+      {
+        id: 'nylon_pe',
+        nameEn: 'PA / PE Vacuum Barrier Pouch',
+        nameHi: 'नायलॉन / पीई वैक्यूम पाउच',
+        layers: 'Polyamide (Nylon) 15µm / LLDPE 55µm',
+        thicknessUm: 70,
+        otr: 32,
+        wvtr: 7.0,
+        co2tr: 95,
+        sealTemp: '135 - 160 °C', sealStrength: '45 N/15mm (Puncture proof)',
+        tensileStrength: '95 MPa', punctureStrength: '68 N (Extreme puncture resistance)',
+        lightBarrier: '15%', transparency: '88% Transparent',
+        costPerPack: 3.8, minOrderQty: '300 pouches',
+        ecoScore: 60, eprCategory: 'Category II (PA/PE co-ex)',
+        recyclability: '70% Recyclable', compostability: 'Non-compostable',
+        suitableProduce: false, suitableSnacks: true, suitableGrains: false, suitableDairy: true,
+        prosEn: 'Extremely tough; handles hard paneer edges and bone/sharp spice punctures',
+        prosHi: 'अत्यधिक मजबूत; नुकीली चीजों या ठोस पनीर से भी नहीं फटता',
+        consEn: 'Moderate oxygen barrier compared to metallized foil',
+        consHi: 'फॉइल जितना तेज ऑक्सीजन बैरियर नहीं है',
+        isLocal: false
+      },
+      {
+        id: 'jute_sack',
+        nameEn: 'Laminated Natural Jute Sack',
+        nameHi: 'प्राकृतिक जूट (बोरा) थैला',
+        layers: 'Natural Jute Fiber 280 gsm / Thin LDPE internal film',
+        thicknessUm: 350,
+        otr: 1200,
+        wvtr: 35,
+        co2tr: 4500,
+        sealTemp: 'Stitched mouth', sealStrength: 'High tensile yarn stitching',
+        tensileStrength: '420 MPa', punctureStrength: '150 N',
+        lightBarrier: '95%', transparency: 'Opaque brown weave',
+        costPerPack: 14.0, minOrderQty: '25 bags (Cost ₹0.28/kg for 50kg grain)',
+        ecoScore: 92, eprCategory: 'Natural Fiber (Exempt from plastic levy)',
+        recyclability: '100% Biodegradable & reusable 50+ times', compostability: '100% Soil Biodegradable',
+        suitableProduce: true, suitableSnacks: false, suitableGrains: true, suitableDairy: false,
+        prosEn: 'Ideal for 25–50kg bulk storage of onions, potatoes and paddy grains',
+        prosHi: 'आलू, प्याज और धान की 25-50 किलो थोक पैकिंग के लिए सबसे उत्तम',
+        consEn: 'Unsuited for small retail packs or moisture-sensitive snacks',
+        consHi: 'छोटे 200 ग्राम पैकेट या नमकीन चिप्स के लिए अनुपयोगी',
+        isLocal: true
+      },
+      {
+        id: 'hdpe_woven_sack',
+        nameEn: 'Woven HDPE Sack with Loose Inner PE Liner',
+        nameHi: 'HDPE कट्टा (बोरी) + प्लास्टिक लाइनर',
+        layers: 'Cross-Woven HDPE Tape 90 gsm + Inserted PE liner 25µm',
+        thicknessUm: 120,
+        otr: 1800,
+        wvtr: 8.5,
+        co2tr: 6500,
+        sealTemp: 'Machine stitched top', sealStrength: '350 N Drop proof',
+        tensileStrength: '280 MPa', punctureStrength: '85 N',
+        lightBarrier: '80%', transparency: 'Opaque woven white',
+        costPerPack: 12.0, minOrderQty: '50 sacks (Cost ₹0.24/kg for 50kg)',
+        ecoScore: 52, eprCategory: 'Category I (Woven HDPE)',
+        recyclability: '95% Recyclable in recycling hubs', compostability: 'Non-compostable',
+        suitableProduce: false, suitableSnacks: false, suitableGrains: true, suitableDairy: false,
+        prosEn: 'The reliable Indian standard for 25kg / 50kg grain and pulse mandi transport',
+        prosHi: 'मंडी में 25-50 किलो अनाज भेजने का सबसे मजबूत व सस्ता साधन',
+        consEn: 'No gas barrier; loose liner can snag during grain scoop',
+        consHi: 'गैस नहीं रोकता; खुदरा काउंटर बिक्री के लिए नहीं है',
+        isLocal: true
+      },
+      {
+        id: 'crate_ventilated',
+        nameEn: 'Rigid Ventilated Plastic Crate + Perforated Liner',
+        nameHi: 'हवादार प्लास्टिक क्रेट + छिद्रित लाइनर',
+        layers: 'Virgin High-Impact PP Crates (Reusable 500+ trips)',
+        thicknessUm: 2200,
+        otr: 25000,
+        wvtr: 50,
+        co2tr: 80000,
+        sealTemp: 'Lid latch', sealStrength: 'Stacking load 500 kg',
+        tensileStrength: 'Rigid crate', punctureStrength: 'Impact proof',
+        lightBarrier: 'Open lattice', transparency: 'Open ventilation slots',
+        costPerPack: 1.5, minOrderQty: 'Reusable asset (₹350 crate amortized over 250 trips = ₹1.4/trip)',
+        ecoScore: 94, eprCategory: 'Reusable Rigid Transport Packaging (Exempt)',
+        recyclability: '100% Recyclable rigid PP at end of 5-year life', compostability: 'Non-compostable',
+        suitableProduce: true, suitableSnacks: false, suitableGrains: false, suitableDairy: false,
+        prosEn: 'Zero crushing of mangoes & tomatoes during rough rural tempo transport',
+        prosHi: 'टेंपो या बस की छत पर भी आम-टमाटर दबने और फूटने से 100% बचते हैं',
+        consEn: 'Empty crate must be returned from mandi back to farm',
+        consHi: 'मंडी से खाली क्रेट को वापस फार्म पर लाना पड़ता है',
+        isLocal: true
+      },
+      {
+        id: 'glass_earthen',
+        nameEn: 'Food-Grade Glass Jar / Glazed Ceramic Jar',
+        nameHi: 'शीशे का जार / चीनी मिट्टी की बरनी',
+        layers: 'Soda-Lime Glass 2.5mm with Lug Hermetic Cap',
+        thicknessUm: 2500,
+        otr: 0.0,
+        wvtr: 0.0,
+        co2tr: 0.0,
+        sealTemp: 'Lug cap twist with plastisol liner', sealStrength: 'Vacuum hermetic seal',
+        tensileStrength: 'Rigid glass', punctureStrength: 'Puncture immune',
+        lightBarrier: '90% if amber glass, 10% if flint clear', transparency: 'Clear / Amber',
+        costPerPack: 8.5, minOrderQty: '100 jars (Refillable model)',
+        ecoScore: 88, eprCategory: 'Inert Mineral Glass (Zero plastic)',
+        recyclability: '100% Infinitely recyclable without downcycling', compostability: 'Inert natural mineral',
+        suitableProduce: false, suitableSnacks: true, suitableGrains: false, suitableDairy: true,
+        prosEn: '100% inert to spicy oils and vinegar acids in pickles and desi ghee',
+        prosHi: 'अचार के खट्टे तेल और देसी घी के लिए 100% सुरक्षित और शुद्ध',
+        consEn: 'Heavy shipping weight; fragile breakage during rough tempo transit',
+        consHi: 'वजन में भारी और झटकों में टूटने का डर',
+        isLocal: true
+      },
+      {
+        id: 'areca_leaf',
+        nameEn: 'Pressed Areca Palm Leaf Container + Bio-Wax',
+        nameHi: 'सुपारी के पत्ते (अरेका लीफ) का डिब्बा',
+        layers: 'Naturally Fallen Areca Palm Leaf + Plant Resin Coating',
+        thicknessUm: 1200,
+        otr: 120,
+        wvtr: 28,
+        co2tr: 450,
+        sealTemp: 'Tied with natural hemp twine / paper tape', sealStrength: '15 N',
+        tensileStrength: 'Semi-rigid natural leaf', punctureStrength: '25 N',
+        lightBarrier: '98%', transparency: 'Opaque organic leaf texture',
+        costPerPack: 3.5, minOrderQty: '100 units',
+        ecoScore: 100, eprCategory: '100% Agro-Waste Upcycled (Zero Plastic)',
+        recyclability: '100% Backyard Soil Compostable in 45 days', compostability: '100% Organic Biomass',
+        suitableProduce: true, suitableSnacks: true, suitableGrains: false, suitableDairy: false,
+        prosEn: 'Zero chemicals, zero plastic tax; upcycled from fallen Indian palm leaves',
+        prosHi: 'बिना किसी केमिकल के गिरे हुए पत्तों से बना; 45 दिन में मिट्टी बन जाता है',
+        consEn: 'Short ambient shelf life (< 15 days) for moist or oily foods',
+        consHi: 'गीले खाद्य पदार्थों के लिए 15 दिनों से ज्यादा नहीं चलता',
+        isLocal: true
+      }
+    ];
+
+    // ══════════════════════════════════════════════════════════════
+    // 3. COMPLETE BILINGUAL I18N DICTIONARY
+    // ══════════════════════════════════════════════════════════════
+    const i18n = {
+      en: {
+        langToggle: 'हिंदी',
+        subtag: 'AI-Guided Packaging Decision Support for Indian Agro & MSMEs',
+        modeSimple: 'Simple (Farmer / Mandi)',
+        modeExpert: 'Expert (Food Technologist)',
+        switchToExpert: '⚙️ Switch to Expert Mode',
+        switchToSimple: '⚡ Switch to 60-Sec Mode',
+        badgeSimple: 'Simple',
+        badgeExpert: 'Expert',
+        expertTitle: 'Food Technologist Scientific Datasheet Mode',
+        expertDesc: 'Configure all 10 chemical, physical, logistic, and commercial parameters with literature-grounded kinetics.',
+        btnResetLiterature: 'Reset to Literature Values',
+        secProduct: '1. Food Composition & Product Properties',
+        secStorage: '2. Storage Environment & Shelf Life Target',
+        secLogistics: '3. Logistics, Transport & Weather Conditions',
+        secBusiness: '4. Commercial, Batch Size & Current Packaging',
+        secSustainability: '5. Sustainability & Retail Display Needs',
+        labelBatchSize: 'Batch Size (kg)',
+        labelTransportHours: 'Transport Transit Time (Hours)',
+        labelRetailDisplay: 'Retail Visibility Requirement',
+        dispClear: 'See-Through Transparent Pouch Required',
+        dispOpaque: 'Opaque / Metallized Barrier Acceptable',
+        labelSustainPref: 'Eco-Sustainability Weight',
+        sustainHigh: 'High (Prioritize Compostable / Bio-based / Recyclable)',
+        sustainStd: 'Standard (Balance Cost & Function)',
+        toastExpertOn: 'Expert Mode ON — Full Engineering Parameters',
+        toastExpertOff: 'Simple 60-Sec Mode ON — Quick Farmer Wizard',
+        toastSaved: 'Settings saved successfully',
+        toastOfflineAi: 'AI service unavailable or timed out. Provided verified scientific rule-engine answer.',
+        toastVoiceNotSupported: 'Speech recognition is not supported in this browser.',
+        toastVoiceRecognized: 'Voice input recognized: ',
+        toastVoiceError: 'Voice input could not be detected. Please try again.',
+        searchCommoditiesPlaceholder: 'Search 16 commodities (e.g. Mango, Aam, Paneer, Kela, Makhana, Rice...)',
+        voiceSearchBtn: 'Voice Search',
+        voiceListening: 'Listening... Please speak now',
+        voiceProcessing: 'Processing voice...',
+        voiceDidYouMean: 'Did you mean one of these?',
+        voiceCandSelect: 'Tap any candidate to select:',
+        voiceErrNotAllowed: 'Microphone permission denied. Please allow microphone access in your browser settings.',
+        voiceErrService: 'Speech recognition service not allowed or blocked by browser.',
+        voiceErrNoSpeech: 'No speech was detected. Please speak closer to your microphone and try again.',
+        voiceErrAudio: 'No microphone hardware found. Ensure your microphone is connected and unmuted.',
+        voiceErrNetwork: 'Network connection error with speech recognition service.',
+        voiceErrLang: 'Selected language is not supported by your device speech recognizer.',
+        voiceErrInsecure: 'Voice search requires Chrome/Edge over HTTPS or localhost (Speech Recognition is disabled over file://). Open search box to type instead.',
+        voiceErrGeneric: 'Voice recognition error. Please try typing your search.',
+        voiceNumericSuccess: 'Voice command updated: ',
+        voiceShelfLifePrompt: 'Speak shelf life days (e.g. 15 days or 30)',
+        btnTypeInstead: 'Type in Search Box',
+
+        homeHeroTitle: 'Save Your Harvest from Spoilage with Right Packaging',
+        homeHeroDesc: 'Stop guessing. In 60 seconds, discover the exact scientific barrier, film thickness, gas mixture, and lowest-cost bag for your crop or food product.',
+        btnStartCheck: 'Start Packaging Check (60s)',
+        myImpactTitle: 'National Food Loss Prevention Impact',
+        statFoodSaved: 'Food Spoilage Avoided',
+        statRupeesSaved: 'Farmer Income Protected',
+        statChecksDone: 'Advisory Calculations',
+        quickCommodities: 'Select Common Commodity:',
+        orSearchVoice: 'Or search / say any food item:',
+        voiceHelp: 'Click mic & speak in Hindi or English (e.g. "Alphonso Mango", "Paneer", "Namkeen")',
+        step1Title: 'Select What You Are Packing',
+        step1Subtitle: 'Pick a commodity to automatically load scientific moisture, oil, pH, and respiration properties.',
+        step2Title: 'Where Is Your Produce Going?',
+        step3Title: 'Target Shelf Life & Storage',
+        step4Title: 'Transport & Logistics Stress',
+        step5Title: 'Current Practice & Budget',
+        destLocal: 'Local Village / Mandi (< 24 hrs)',
+        destCity: 'State Wholesale / City Hub (2–5 days)',
+        destMetro: 'Metro Retail Supermarkets (7–15 days)',
+        destExport: 'Long-Haul Export / Cold-Chain (15–60 days)',
+        storageAmbient: 'Ambient Temperature (Open Godown 25–38°C)',
+        storageChilled: 'Refrigerated Cold Room (2–8°C)',
+        storageFrozen: 'Deep Frozen Logistics (-18°C)',
+        seasonNormal: 'Normal Dry Weather',
+        seasonMonsoon: 'Monsoon / High Humidity (Rainy 85%+ RH)',
+        seasonSummer: 'Peak Summer Heat (38°C+ Hot Wave)',
+        transTempo: 'Local Open Auto / Pickup Tempo',
+        transCovered: 'Covered Tarpaulin Heavy Truck',
+        transReefer: 'Temperature-Controlled Reefer Van',
+        budgetCost: 'Lowest Cost First (Tight Margin)',
+        budgetBalanced: 'Balanced (Standard Commercial)',
+        budgetPremium: 'Maximum Shelf Life (Export / Premium)',
+        btnNext: 'Next Step →',
+        btnBack: '← Previous',
+        btnAnalyze: 'Run Scientific Packaging Recommendation',
+        analyzingTitle: 'Computing Optimal Barrier Kinetics...',
+        stepKin1: 'Reading post-harvest respiration & gas permeability requirements...',
+        stepKin2: 'Calculating required WVTR moisture threshold & OTR oxygen limits...',
+        stepKin3: 'Simulating microbial safety & temperature shelf-life factors (Q10)...',
+        stepKin4: 'Auditing FSSAI Packaging 2018 & Plastic Waste EPR compliance...',
+        stepKin5: 'Optimizing small-batch ₹/pack costs and local availability...',
+        resultsHeading: 'Packaging Recommendation & Technical Datasheet',
+        resultsSubhead: 'Indicative recommendation based on published food science. Validate with lab testing prior to mass production.',
+        verdictTitle: 'Recommended Packaging Solution',
+        riskLow: 'Low Spoilage Risk',
+        riskMed: 'Moderate Spoilage Risk',
+        riskHigh: 'High Spoilage Risk (Unsafe)',
+        keepsFreshFor: 'Estimated Shelf Life:',
+        dominantFailure: 'Primary Spoilage Threat:',
+        costPerPackLabel: 'Estimated Cost per Pack:',
+        costPer100Label: 'Per 100 Packs:',
+        costPerKgLabel: 'Packaging Cost per kg of Product:',
+        tabBest: 'Best Overall',
+        tabCost: 'Lowest Cost',
+        tabShelf: 'Longest Shelf Life',
+        tabEco: 'Eco-Friendly',
+        readAloudBtn: '🔊 Read Aloud (Voice)',
+        shelfLifeSimTitle: 'Live Shelf-Life Simulator (Q10 Arrhenius Kinetics)',
+        simTempLabel: 'Storage Temperature (°C):',
+        simRhLabel: 'Relative Humidity (% RH):',
+        simNotice: 'Notice: As temperature or humidity increases, respiration and permeability multiply, shortening shelf life in real time.',
+        whatYouUseTodayTitle: 'Benefit of Switching from Current Packaging',
+        wasteAvoided: 'Estimated Spoilage Avoided:',
+        rupeesProtected: 'Estimated Value Protected per Batch:',
+        specsTitle: 'Scientific Specifications & Engineering Datasheet',
+        specOtr: 'Oxygen Transmission Rate (OTR)',
+        specWvtr: 'Water Vapor Transmission Rate (WVTR)',
+        specCo2tr: 'Carbon Dioxide Transmission (CO₂TR)',
+        specThickness: 'Recommended Total Thickness',
+        specSeal: 'Heat Sealability & Bond Strength',
+        specMech: 'Mechanical Tensile & Puncture Strength',
+        specMap: 'Modified Atmosphere Gas Ratio (MAP)',
+        specPerf: 'Micro-Perforation Breathing Window',
+        specLight: 'Light & UV Barrier',
+        specEpr: 'CPCB Plastic Waste Rules 2022 (EPR Category)',
+        specRecycle: 'End-of-Life Recyclability',
+        specStandard: 'Regulatory & Lab Testing Protocol',
+        whyThisTitle: 'Why This Material Was Chosen',
+        whyNotTitle: 'Excluded Alternatives & Technical Reasons',
+        fssaiChecklistTitle: 'FSSAI Packaging Regulations 2018 Compliance Checklist',
+        btnDownloadPdf: '📄 Download Official PDF Report',
+        btnPassportQr: '📱 View Packaging Passport QR',
+        qrTitle: 'Traceable Packaging Passport (Offline Scannable QR)',
+        qrSubhead: 'Scan with any smartphone camera to verify batch packaging specifications, shelf-life date, and handling instructions.',
+        schemeTitle: 'Available Government Scheme Subsidies',
+        schemePmFme: 'PM-FME Scheme (MoFPI): 35% credit-linked capital subsidy for micro food packaging machinery and testing.',
+        schemeOdop: 'ODOP (One District One Product): State incentives for standardized export-grade packaging adoption.',
+        optiBotWelcome: 'Namaste! I am OptiBot, your packaging science advisor. Ask me anything about OTR, WVTR, MAP gas formulas, or FSSAI rules for your product.',
+        botChip1: 'Can I export this in summer?',
+        botChip2: 'What is OTR & WVTR?',
+        botChip3: 'FSSAI packaging rules checklist',
+        botChip4: 'Cheapest eco-friendly option?'
+      },
+      hi: {
+        langToggle: 'English',
+        subtag: 'भारतीय किसानों और खाद्य उद्यमियों के लिए वैज्ञानिक पैकेजिंग निर्णय प्रणाली',
+        modeSimple: 'सरल मोड (किसान / मंडी)',
+        modeExpert: 'विशेषज्ञ मोड (फूड टेक्नोलॉजिस्ट)',
+        switchToExpert: '⚙️ विशेषज्ञ मोड में बदलें',
+        switchToSimple: '⚡ 60-सेकंड मोड में बदलें',
+        badgeSimple: 'सरल',
+        badgeExpert: 'विशेषज्ञ',
+        expertTitle: 'खाद्य प्रौद्योगिकीविद् वैज्ञानिक डेटाशीट मोड',
+        expertDesc: 'साहित्य-सत्यापित गतिज गणनाओं के साथ सभी 10 रासायनिक, भौतिक, रसद और वाणिज्यिक मापदंड सेट करें।',
+        btnResetLiterature: 'शोध मानों पर रीसेट करें',
+        secProduct: '1. खाद्य संरचना और उत्पाद के भौतिक गुण',
+        secStorage: '2. भंडारण वातावरण और वांछित शेल्फ लाइफ',
+        secLogistics: '3. रसद, परिवहन और मौसम की स्थिति',
+        secBusiness: '4. व्यावसायिक, बैच आकार और वर्तमान पैकेजिंग',
+        secSustainability: '5. पर्यावरण स्थिरता और डिस्प्ले आवश्यकताएं',
+        labelBatchSize: 'खेप का वजन / बैच आकार (किलो)',
+        labelTransportHours: 'परिवहन यात्रा समय (घंटे)',
+        labelRetailDisplay: 'खुदरा काउंटर पर माल दिखने की जरूरत',
+        dispClear: 'आर-पार दिखने वाला पारदर्शी पाउच अनिवार्य',
+        dispOpaque: 'अपारदर्शी / मेटलाइज्ड पाउच स्वीकार्य',
+        labelSustainPref: 'पर्यावरण प्राथमिकता स्तर',
+        sustainHigh: 'उच्च (कम्पोस्टेबल / जैव-आधारित को प्राथमिकता)',
+        sustainStd: 'सामान्य (लागत और कार्यक्षमता का संतुलन)',
+        toastExpertOn: 'विशेषज्ञ मोड चालू — पूर्ण वैज्ञानिक मापदंड',
+        toastExpertOff: 'सरल मोड चालू — 60-सेकंड त्वरित विज़ार्ड',
+        toastSaved: 'सेटिंग्स सफलतापूर्वक सहेजी गईं',
+        toastOfflineAi: 'AI सेवा अनुपलब्ध या समय समाप्त। प्रमाणित ऑफलाइन वैज्ञानिक नियम उत्तर दिया गया।',
+        toastVoiceNotSupported: 'इस ब्राउज़र में वॉइस इनपुट की सुविधा नहीं है।',
+        toastVoiceRecognized: 'पहचाना गया शब्द: ',
+        toastVoiceError: 'आवाज पहचानी नहीं जा सकी। कृपया पुनः प्रयास करें।',
+        searchCommoditiesPlaceholder: '16 उत्पाद खोजें (उदा: आम, केला, पनीर, मखाना, चावल, भुजिया...)',
+        voiceSearchBtn: 'बोलकर खोजें',
+        voiceListening: 'सुन रहे हैं... कृपया अब बोलें',
+        voiceProcessing: 'आवाज़ प्रोसेस हो रही है...',
+        voiceDidYouMean: 'क्या आपका मतलब इनमें से कोई है?',
+        voiceCandSelect: 'चुनने के लिए टैप करें:',
+        voiceErrNotAllowed: 'माइक्रोफ़ोन अनुमति अस्वीकृत है। कृपया ब्राउज़र सेटिंग्स में माइक की अनुमति दें।',
+        voiceErrService: 'वाक् पहचान सेवा की अनुमति नहीं है या यह ब्लॉक है।',
+        voiceErrNoSpeech: 'कोई आवाज़ नहीं सुनाई दी। कृपया माइक के पास बोलें और पुनः प्रयास करें।',
+        voiceErrAudio: 'माइक नहीं मिला। सुनिश्चित करें कि आपका माइक्रोफ़ोन कनेक्टेड और चालू है।',
+        voiceErrNetwork: 'वाक् पहचान नेटवर्क त्रुटि। कृपया इंटरनेट कनेक्शन जांचें।',
+        voiceErrLang: 'चुनी गई भाषा आपके डिवाइस के वाक् पहचानकर्ता द्वारा समर्थित नहीं है।',
+        voiceErrInsecure: 'वॉयस सुविधा के लिए HTTPS पर Chrome ब्राउज़र आवश्यक है (file:// पर अक्षम)। कृपया टाइप करके खोजें।',
+        voiceErrGeneric: 'वाक् पहचान में त्रुटि हुई। कृपया लिखकर खोजें।',
+        voiceNumericSuccess: 'वॉयस कमांड लागू: ',
+        voiceShelfLifePrompt: 'शेल्फ लाइफ दिन बोलें (जैसे 15 दिन या 30)',
+        btnTypeInstead: 'सर्च बॉक्स में लिखें',
+
+        homeHeroTitle: 'सही पैकेजिंग से अपनी फसल और खाद्य उत्पाद को खराब होने से बचाएं',
+        homeHeroDesc: 'अंदाजे से पैकिंग बंद करें। सिर्फ 60 सेकंड में जानें कि आपकी फसल या उत्पाद के लिए कौन सी थैली, मोटाई और गैस मिश्रण सबसे सस्ता और सुरक्षित है।',
+        btnStartCheck: 'पैकेजिंग जांच शुरू करें (60 सेकंड)',
+        myImpactTitle: 'खाद्य बर्बादी रोकथाम का राष्ट्रीय प्रभाव',
+        statFoodSaved: 'बर्बाद होने से बचा अनाज/सब्जी',
+        statRupeesSaved: 'किसानों की सुरक्षित आय',
+        statChecksDone: 'कुल पैकेजिंग विश्लेषण',
+        quickCommodities: 'मुख्य फसल / उत्पाद चुनें:',
+        orSearchVoice: 'या नाम बोलें / लिखें:',
+        voiceHelp: 'माइक दबाकर हिंदी या अंग्रेजी में बोलें (जैसे: "अल्फांसो आम", "पनीर", "भुजिया नमकीन")',
+        step1Title: 'उत्पाद चुनें जिसकी पैकिंग करनी है',
+        step1Subtitle: 'उत्पाद चुनते ही उसकी वैज्ञानिक नमी, तेल, पीएच और श्वसन दर अपने आप भर जाएगी।',
+        step2Title: 'आपका माल कहां जा रहा है?',
+        step3Title: 'वांछित शेल्फ लाइफ और भंडारण का तरीका',
+        step4Title: 'परिवहन और मौसम का दबाव',
+        step5Title: 'वर्तमान पैकेजिंग और बजट',
+        destLocal: 'स्थानीय गांव / पास की मंडी (< 24 घंटे)',
+        destCity: 'राज्य का बड़ा शहर / थोक बाजार (2–5 दिन)',
+        destMetro: 'मेट्रो सुपरमार्केट / रिटेल स्टोर (7–15 दिन)',
+        destExport: 'दूर का निर्यात / कोल्ड चेन (15–60 दिन)',
+        storageAmbient: 'सामान्य तापमान (खुला गोदाम 25–38°C)',
+        storageChilled: 'रेफ्रिजरेटेड कोल्ड स्टोर (2–8°C)',
+        storageFrozen: 'डीप फ्रीजर (-18°C)',
+        seasonNormal: 'सामान्य सूखा मौसम',
+        seasonMonsoon: 'मानसून / अत्यधिक सीलन (बारिश 85%+ नमी)',
+        seasonSummer: 'भीषण गर्मी की लू (38°C+ तापमान)',
+        transTempo: 'स्थानीय खुला पिकअप टेंपो / ऑटो',
+        transCovered: 'तिरपाल से ढका बड़ा ट्रक',
+        transReefer: 'तापमान नियंत्रित एसी रेफ्रिजरेटेड गाड़ी',
+        budgetCost: 'सबसे कम लागत पहले (किफायती)',
+        budgetBalanced: 'संतुलित (सामान्य व्यापारिक)',
+        budgetPremium: 'अधिकतम शेल्फ लाइफ (निर्यात / प्रीमियम)',
+        btnNext: 'अगला कदम →',
+        btnBack: '← पिछला',
+        btnAnalyze: 'वैज्ञानिक पैकेजिंग विश्लेषण करें',
+        analyzingTitle: 'वैज्ञानिक बैरियर गणना जारी है...',
+        stepKin1: 'फसल की श्वसन दर और गैस पारगम्यता की जांच...',
+        stepKin2: 'नमी (WVTR) और ऑक्सीजन (OTR) बैरियर की गणना...',
+        stepKin3: 'तापमान प्रभाव और शेल्फ लाइफ सिमुलेशन (Q10 नियम)...',
+        stepKin4: 'FSSAI पैकेजिंग नियम 2018 व प्लास्टिक वेस्ट EPR की जांच...',
+        stepKin5: 'प्रति पैकेट न्यूनतम खर्च और स्थानीय उपलब्धता का तालमेल...',
+        resultsHeading: 'पैकेजिंग अनुशंसा और तकनीकी रिपोर्ट',
+        resultsSubhead: 'प्रकाशित वैज्ञानिक शोध पर आधारित सांकेतिक सलाह। व्यावसायिक उत्पादन से पूर्व लैब टेस्ट अवश्य कराएं।',
+        verdictTitle: 'अनुशंसित पैकेजिंग समाधान',
+        riskLow: 'खराब होने का कम जोखिम (सुरक्षित)',
+        riskMed: 'मध्यम जोखिम (ध्यान दें)',
+        riskHigh: 'अत्यधिक जोखिम (असुरक्षित)',
+        keepsFreshFor: 'अनुमानित शेल्फ लाइफ:',
+        dominantFailure: 'खराबी का मुख्य कारण:',
+        costPerPackLabel: 'प्रति पैकेट अनुमानित खर्च:',
+        costPer100Label: '100 पैकेट का खर्च:',
+        costPerKgLabel: 'प्रति किलो माल पर पैकेजिंग खर्च:',
+        tabBest: 'सर्वोत्तम संतुलित',
+        tabCost: 'सबसे सस्ता',
+        tabShelf: 'सबसे लंबी उम्र',
+        tabEco: 'पर्यावरण-अनुकूल',
+        readAloudBtn: '🔊 आवाज में सुनें (बोलकर बताएं)',
+        shelfLifeSimTitle: 'लाइव शेल्फ लाइफ सिम्युलेटर (तापमान और सीलन का असर)',
+        simTempLabel: 'गोदाम / भंडारण का तापमान (°C):',
+        simRhLabel: 'हवा में नमी का स्तर (% RH):',
+        simNotice: 'ध्यान दें: तापमान या उमस बढ़ते ही सूक्ष्मजीव तेजी से पनपते हैं और शेल्फ लाइफ तुरंत घट जाती है।',
+        whatYouUseTodayTitle: 'वर्तमान पैकेजिंग बदलने पर होने वाला सीधा फायदा',
+        wasteAvoided: 'सड़न से बचाया गया अनुमानित माल:',
+        rupeesProtected: 'प्रति खेप बचाया गया अनुमानित मुनाफा:',
+        specsTitle: 'वैज्ञानिक विनिर्देश और तकनीकी डेटाशीट',
+        specOtr: 'ऑक्सीजन संचरण दर (OTR)',
+        specWvtr: 'जल वाष्प संचरण दर (WVTR)',
+        specCo2tr: 'कार्बन डाइऑक्साइड संचरण (CO₂TR)',
+        specThickness: 'अनुशंसित फिल्म की मोटाई',
+        specSeal: 'सील करने का तापमान और मजबूती',
+        specMech: 'फिल्म की खिंचाव और पंक्चर शक्ति',
+        specMap: 'संशोधित वायुमंडल गैस अनुपात (MAP)',
+        specPerf: 'हवादार सूक्ष्म छिद्रों (माइक्रो-परफोरेशन्स) का नियम',
+        specLight: 'धूप व पराबैंगनी किरणों से सुरक्षा',
+        specEpr: 'केंद्रीय प्रदूषण नियंत्रण बोर्ड प्लास्टिक नियम 2022 (EPR)',
+        specRecycle: 'रीसाइक्लिंग और पर्यावरण अनुकूलता',
+        specStandard: 'सरकारी नियम व मानक परीक्षण प्रणाली',
+        whyThisTitle: 'यह सामग्री क्यों चुनी गई (कारण)',
+        whyNotTitle: 'अन्य सामग्रियां क्यों हटाई गईं (कारण)',
+        fssaiChecklistTitle: 'FSSAI पैकेजिंग नियम 2018 अनुपालन चेकलिस्ट',
+        btnDownloadPdf: '📄 आधिकारिक PDF रिपोर्ट डाउनलोड करें',
+        btnPassportQr: '📱 पैकेजिंग पासपोर्ट QR कोड देखें',
+        qrTitle: 'ट्रेसेबल पैकेजिंग पासपोर्ट (ऑफलाइन QR कोड)',
+        qrSubhead: 'किसी भी स्मार्टफोन से स्कैन करके बैच नंबर, पैकिंग तिथि, एक्सपायरी और रखने के निर्देश तुरंत देखें।',
+        schemeTitle: 'सरकारी योजनाएं और सब्सिडी सहायता',
+        schemePmFme: 'PM-FME योजना: खाद्य प्रसंस्करण व पैकेजिंग मशीनरी लगाने पर 35% तक की सरकारी सब्सिडी।',
+        schemeOdop: 'ODOP योजना: जिला स्तरीय विशेष उत्पादों की गुणवत्ता पैकेजिंग हेतु विशेष सहायता।',
+        optiBotWelcome: 'नमस्ते! मैं आपका ऑप्टीबॉट पैकेजिंग सहायक हूँ। अपने उत्पाद की OTR, WVTR, गैस पैकिंग या FSSAI नियमों के बारे में कुछ भी पूछें।',
+        botChip1: 'क्या गर्मी में इसका निर्यात संभव है?',
+        botChip2: 'OTR और WVTR क्या होता है?',
+        botChip3: 'FSSAI पैकेजिंग नियम क्या हैं?',
+        botChip4: 'सबसे सस्ती इको-फ्रेंडली पैकिंग?'
+      }
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // 4. APPLICATION STATE & PERSISTENCE
+    // ══════════════════════════════════════════════════════════════
+    const app = {
+      lang: 'en',
+      expertMode: false,
+      currentScreen: 'home',
+      simpleStep: 1,
+      analyzing: false,
+      selectedCommodity: COMMODITIES.mango,
+      activePlanTab: 'best', // 'best' | 'cost' | 'shelf' | 'eco'
+      voiceActive: false,
+      recognition: null,
+
+      // Live user parameters
+      inputs: {
+        commodityId: 'mango',
+        productName: 'Alphonso Mango',
+        moisture: 82,
+        fat: 0.4,
+        ph: 4.5,
+        respiration: 35,
+        targetShelfLife: 10,
+        shelfLifeUnit: 'days',
+        destination: 'city',
+        storageType: 'chilled',
+        storageTemp: 13,
+        storageRH: 85,
+        season: 'normal',
+        transportMode: 'tempo',
+        transportHours: 6,
+        budget: 'balanced',
+        batchKg: 50,
+        currentPacking: 'thin_poly', // 'none' | 'thin_poly' | 'paper_box' | 'gunny'
+        retailDisplay: true,
+        sustainabilityPref: 'high'
+      },
+
+      // Simulation offsets
+      simTemp: 13,
+      simRH: 85,
+
+      // Calculated engine results
+      analysis: null,
+
+      // Stored History
+      history: JSON.parse(localStorage.getItem('optiwrap_history') || '[]'),
+
+      // Cumulative Impact statistics
+      impact: JSON.parse(localStorage.getItem('optiwrap_impact') || '{"foodSavedKg": 480, "rupeesSaved": 38400, "checksDone": 28}'),
+
+      // API Configuration
+      config: {
+        geminiKey: localStorage.getItem('optiwrap_gemini_key') || '',
+        geminiModel: localStorage.getItem('optiwrap_gemini_model') || 'gemini-2.5-flash',
+        groqKey: localStorage.getItem('optiwrap_groq_key') || '',
+        groqModel: localStorage.getItem('optiwrap_groq_model') || 'llama-3.3-70b-versatile',
+        proxyUrl: localStorage.getItem('optiwrap_proxy_url') || ''
+      },
+
+      // Bot conversation messages
+      botMessages: [],
+
+      // ─── INITIALIZATION ───
+      init: function() {
+        // Restore Expert Mode from LocalStorage
+        const savedMode = localStorage.getItem('optiwrap_mode');
+        if (savedMode === 'expert') {
+          this.expertMode = true;
+        } else {
+          this.expertMode = false;
+        }
+
+        // Init Speech Recognition if available
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+          this.recognition = new SpeechRec();
+          this.recognition.continuous = false;
+          this.recognition.interimResults = false;
+        }
+
+        // Initialize bot messages
+        this.botMessages = [
+          { role: 'bot', content: this.t('optiBotWelcome') }
+        ];
+
+        // Update mode badge and button in header
+        this.updateModeUI();
+
+        
+        // Register Service Worker for offline PWA functionality
+        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          navigator.serviceWorker.register('./sw.js').then(function(reg) {
+            console.log('OptiWrap Service Worker active:', reg.scope);
+          }).catch(function(err) {
+            console.warn('OptiWrap Service Worker registration notice:', err);
+          });
+        }
+
+        // Render initial view
+        this.render();
+      },
+
+      t: function(key) {
+        const dict = i18n[this.lang] || i18n.en;
+        return dict[key] || i18n.en[key] || key;
+      },
+
+      // ─── NON-BLOCKING TOAST NOTIFICATIONS ───
+      showToast: function(message, type = 'info', duration = 3500) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        const typeStyles = {
+          info: 'bg-slate-900 text-white border-slate-700',
+          success: 'bg-brand-700 text-white border-brand-600',
+          warning: 'bg-amber-600 text-white border-amber-500',
+          error: 'bg-red-700 text-white border-red-600'
+        };
+        const icons = {
+          info: 'ℹ️',
+          success: '✅',
+          warning: '⚠️',
+          error: '❌'
+        };
+
+        toast.className = `${typeStyles[type] || typeStyles.info} pointer-events-auto border rounded-2xl px-4 py-3 text-xs sm:text-sm font-semibold shadow-xl flex items-center space-x-2.5 transition-all duration-300 transform translate-y-2 opacity-0`;
+        toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span class="flex-1">${message}</span>`;
+        container.appendChild(toast);
+
+        requestAnimationFrame(() => {
+          toast.classList.remove('translate-y-2', 'opacity-0');
+          toast.classList.add('translate-y-0', 'opacity-100');
+        });
+
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toast.remove(), 300);
+        }, duration);
+      },
+
+      // ─── UNIFIED MODE UI UPDATE ───
+      updateModeUI: function() {
+        const badge = document.getElementById('badge-mode');
+        const btn = document.getElementById('txt-mode-btn');
+        const isExp = this.expertMode;
+
+        if (badge) {
+          badge.textContent = isExp ? this.t('badgeExpert') : this.t('badgeSimple');
+          badge.className = isExp ?
+            'text-[10px] font-bold bg-tech-100 text-tech-700 px-2 py-0.5 rounded-full uppercase transition-all' :
+            'text-[10px] font-bold bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full uppercase transition-all';
+        }
+
+        if (btn) {
+          btn.textContent = isExp ? this.t('switchToSimple') : this.t('switchToExpert');
+        }
+      },
+
+      toggleLanguage: function() {
+        this.lang = this.lang === 'en' ? 'hi' : 'en';
+        document.getElementById('lang-btn-text').textContent = this.lang === 'en' ? 'हिंदी' : 'English';
+        document.getElementById('txt-subtag').textContent = this.t('subtag');
+
+        this.updateModeUI();
+
+        // Update bot welcome message if untouched
+        if (this.botMessages.length === 1) {
+          this.botMessages[0].content = this.t('optiBotWelcome');
+        }
+
+        this.render();
+      },
+
+      toggleExpertMode: function() {
+        this.expertMode = !this.expertMode;
+        localStorage.setItem('optiwrap_mode', this.expertMode ? 'expert' : 'simple');
+
+        // Always reset step to 1 when switching modes so user does not get stuck
+        this.simpleStep = 1;
+        this.updateModeUI();
+
+        const toastMsg = this.expertMode ? this.t('toastExpertOn') : this.t('toastExpertOff');
+        this.showToast(toastMsg, 'info');
+
+        // Keep current view or navigate to wizard
+        if (this.currentScreen === 'wizard') {
+          this.render();
+        } else {
+          this.navigate('wizard');
+        }
+      },
+
+      navigate: function(screen) {
+        this.currentScreen = screen;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.render();
+      },
+
+      startNewCheck: function() {
+        this.simpleStep = 1;
+        this.navigate('wizard');
+      },
+
+      // ─── COMMODITY SELECTION ───
+      selectCommodity: function(id) {
+        const c = COMMODITIES[id];
+        if (!c) return;
+        this.selectedCommodity = c;
+        this.inputs.commodityId = c.id;
+        this.inputs.productName = this.lang === 'hi' ? c.nameHi : c.nameEn;
+        this.inputs.moisture = c.moisture;
+        this.inputs.fat = c.fat;
+        this.inputs.ph = c.ph;
+        this.inputs.respiration = c.resp;
+        this.inputs.targetShelfLife = c.baseShelfLifeDays * 2;
+        this.inputs.storageType = c.defaultStorage;
+        this.inputs.storageTemp = c.defaultTemp;
+        this.inputs.storageRH = c.defaultRH;
+        this.simTemp = c.defaultTemp;
+        this.simRH = c.defaultRH;
+
+        // In simple mode, auto-advance only if on step 1
+        if (!this.expertMode && this.simpleStep === 1) {
+          this.simpleStep = 2;
+        }
+        this.render();
+      },
+
+      // ─── STORAGE CATEGORY SELECTION IN EXPERT MODE ───
+      setStorageCategory: function(val) {
+        this.inputs.storageType = val;
+        if (val === 'ambient') {
+          this.inputs.storageTemp = 25;
+          this.inputs.storageRH = 65;
+        } else if (val === 'chilled') {
+          this.inputs.storageTemp = 4;
+          this.inputs.storageRH = 85;
+        } else if (val === 'frozen') {
+          this.inputs.storageTemp = -18;
+          this.inputs.storageRH = 90;
+        }
+
+        // Live update slider inputs if elements exist
+        const elTemp = document.getElementById('slider-storageTemp');
+        const elTempLbl = document.getElementById('val-storageTemp');
+        if (elTemp && elTempLbl) {
+          elTemp.value = this.inputs.storageTemp;
+          elTempLbl.textContent = this.inputs.storageTemp + ' °C';
+        }
+        const elRH = document.getElementById('slider-storageRH');
+        const elRHLbl = document.getElementById('val-storageRH');
+        if (elRH && elRHLbl) {
+          elRH.value = this.inputs.storageRH;
+          elRHLbl.textContent = this.inputs.storageRH + '%';
+        }
+      },
+
+      // ─── VALIDATED SHELF LIFE NUMBER INPUT ───
+      updateShelfLife: function(val) {
+        let n = parseInt(val, 10);
+        if (isNaN(n) || n < 1) n = 1;
+        if (n > 365) n = 365;
+        this.inputs.targetShelfLife = n;
+        const el = document.getElementById('inp-shelf-life');
+        if (el && el.value !== String(n) && val !== '') {
+          el.value = n;
+        }
+      },
+
+      // ─── LIVE Arrhenius/Q10 SHELF LIFE SIMULATION ───
+      calcSimulatedShelfLife: function(temp, rh) {
+        const c = this.selectedCommodity;
+        const q10 = c.q10 || 2.2;
+        const tempDelta = temp - (c.defaultTemp || 25);
+        const rhDelta = (rh - 65) / 100;
+        const factor = Math.pow(q10, tempDelta / 10) * (1 + Math.max(0, rhDelta * 0.8));
+        return Math.max(1, Math.round((c.baseShelfLifeDays * 2.8) / factor));
+      },
+
+      // Live update for Results simulation sliders without destroying the DOM
+      updateSimView: function() {
+        const days = this.calcSimulatedShelfLife(this.simTemp, this.simRH);
+        const elTempLbl = document.getElementById('val-sim-temp');
+        if (elTempLbl) elTempLbl.textContent = this.simTemp + ' °C';
+        const elRHLbl = document.getElementById('val-sim-rh');
+        if (elRHLbl) elRHLbl.textContent = this.simRH + ' %';
+        const elDays = document.getElementById('val-sim-shelf-life');
+        if (elDays) elDays.textContent = `~${days} Days`;
+        const elCond = document.getElementById('val-sim-cond');
+        if (elCond) elCond.textContent = `At ${this.simTemp}°C / ${this.simRH}% RH`;
+      },
+
+      // ─── SCIENTIFIC RECOMMENDATION ENGINE ───
+      runEngine: function() {
+        const inp = this.inputs;
+        const c = this.selectedCommodity;
+
+        // 1. Kinetic Calculations
+        // Moisture Barrier Needs (WVTR)
+        const moistureDeficit = Math.abs(c.critMoistureLoss);
+        const rhGradient = Math.max(10, Math.abs(inp.storageRH - (c.moisture > 30 ? 95 : 40)));
+        const targetDays = Math.max(1, Number(inp.targetShelfLife));
+        const requiredWVTR = Math.round((moistureDeficit * 350 / (targetDays * (rhGradient / 50))) * 10) / 10;
+
+        // Oxygen Barrier Needs (OTR)
+        let requiredOTR = 1000;
+        if (inp.fat > 20 || c.oxidationRisk === 'critical') {
+          requiredOTR = Math.max(0.5, Math.round((45 / (inp.fat * targetDays * 0.4)) * 10) / 10);
+        } else if (inp.fat > 5 || c.oxidationRisk === 'high') {
+          requiredOTR = Math.max(2.0, Math.round((120 / (inp.fat * targetDays * 0.2)) * 10) / 10);
+        } else if (c.category === 'produce') {
+          requiredOTR = Math.min(15000, Math.max(1500, c.resp * 180));
+        }
+
+        // Q10 Arrhenius Temperature Factor
+        const q10 = c.q10 || 2.2;
+        const tempDelta = inp.storageTemp - (c.defaultTemp || 25);
+        const tempShelfFactor = Math.pow(q10, tempDelta / 10);
+        const estimatedShelfLife = Math.max(1, Math.round(c.baseShelfLifeDays * 2.8 / tempShelfFactor));
+
+        // Produce MAP Gas Mixture
+        let mapO2 = 0;
+        let mapCO2 = 0;
+        let mapN2 = 100;
+        let needsMicroPerf = false;
+        let perfSpec = 'None (Hermetic Seal)';
+
+        if (c.category === 'produce') {
+          mapO2 = c.safeO2 ? Math.round((c.safeO2[0] + c.safeO2[1]) / 2) : 4;
+          mapCO2 = c.safeCO2 ? Math.round((c.safeCO2[0] + c.safeCO2[1]) / 2) : 6;
+          mapN2 = 100 - (mapO2 + mapCO2);
+          needsMicroPerf = c.resp > 25;
+          perfSpec = needsMicroPerf ? `${Math.round(c.resp * 2.2)} micro-pores/m² (Laser drilled 75–100 µm)` : 'Breathable film permeability';
+        } else if (c.category === 'dairy' && inp.commodityId === 'paneer') {
+          mapO2 = 0;
+          mapCO2 = 30;
+          mapN2 = 70;
+        } else if (c.category === 'snacks') {
+          mapO2 = 0;
+          mapCO2 = 0;
+          mapN2 = 100; // 100% Nitrogen flush
+        }
+
+        // 2. Filter Candidate Materials
+        const evaluated = MATERIALS.map(mat => {
+          let score = 70;
+          let suitability = true;
+          let reasonsPass = [];
+          let reasonsFail = [];
+
+          // Produce breathability requirement
+          if (c.category === 'produce') {
+            if (!mat.suitableProduce) {
+              suitability = false;
+              reasonsFail.push(this.lang === 'hi' ? 'ताजी फसल के लिए हवादार नहीं है (दम घुटने का खतरा)' : 'Not breathable for respiring fresh horticulture');
+            } else {
+              score += 15;
+              reasonsPass.push(this.lang === 'hi' ? 'श्वसन गैसों को संतुलित रखता है' : 'Maintains safe aerobic respiration equilibrium');
+            }
+          }
+
+          // Snack & Fat Oxidation constraint
+          if (c.category === 'snacks' || c.oxidationRisk === 'critical') {
+            if (mat.otr > 10) {
+              suitability = false;
+              reasonsFail.push(this.lang === 'hi' ? 'उच्च ऑक्सीजन पारगम्यता (तेल में बदबू का खतरा)' : 'OTR too high: oil will oxidize and turn rancid');
+            } else {
+              score += 20;
+              reasonsPass.push(this.lang === 'hi' ? 'उत्कृष्ट ऑक्सीजन व नमी बैरियर' : 'Superior oxygen & moisture barrier');
+            }
+          }
+
+          // Pickle acidity constraint
+          if (inp.commodityId === 'pickles' && mat.id === 'al_foil_lam') {
+            suitability = false;
+            reasonsFail.push(this.lang === 'hi' ? 'अचार का खट्टा अम्ल एल्युमिनियम को गला सकता है' : 'High acidity can corrode exposed aluminum foil edges');
+          }
+
+          // Retail display constraint: if user requires see-through, opaque materials lose score or fail
+          if (inp.retailDisplay && mat.transparency.includes('Opaque')) {
+            score -= 15;
+          }
+
+          // Economic & Eco weights
+          const costWeight = inp.budget === 'low' ? 25 : 10;
+          const ecoWeight = inp.sustainabilityPref === 'high' ? 25 : 10;
+          score += (100 - mat.costPerPack * 15) * (costWeight / 100);
+          score += mat.ecoScore * (ecoWeight / 100);
+
+          return {
+            ...mat,
+            calculatedScore: Math.round(score),
+            isSuitable: suitability,
+            reasonsPass,
+            reasonsFail
+          };
+        });
+
+        // Filter suitable and rank
+        const suitable = evaluated.filter(m => m.isSuitable).sort((a,b) => b.calculatedScore - a.calculatedScore);
+        const rejected = evaluated.filter(m => !m.isSuitable);
+
+        // 4 Pareto Option Plans
+        const bestOverall = suitable[0] || MATERIALS[0];
+        const lowestCost = [...suitable].sort((a,b) => a.costPerPack - b.costPerPack)[0] || bestOverall;
+        const longestShelf = [...suitable].sort((a,b) => a.otr - b.otr)[0] || bestOverall;
+        const mostSustainable = [...suitable].sort((a,b) => b.ecoScore - a.ecoScore)[0] || bestOverall;
+
+        // Spoilage Risk Assessment
+        let riskLevel = 'low';
+        let riskColor = 'text-brand-600 bg-brand-50 border-brand-200';
+        let riskLabel = this.t('riskLow');
+        if (inp.season === 'monsoon' && inp.storageType === 'ambient') {
+          riskLevel = 'medium';
+          riskColor = 'text-amber-700 bg-amber-50 border-amber-200';
+          riskLabel = this.t('riskMed');
+        }
+        if (inp.transportHours > 12 && inp.transportMode === 'tempo' && inp.storageTemp > 30) {
+          riskLevel = 'high';
+          riskColor = 'text-red-700 bg-red-50 border-red-200';
+          riskLabel = this.t('riskHigh');
+        }
+
+        // Current packing vs recommended comparison (Impact modeling)
+        const batchKg = Number(inp.batchKg) || 50;
+        const wasteRateCurrent = inp.currentPacking === 'none' ? 0.35 : (inp.currentPacking === 'thin_poly' ? 0.22 : 0.15);
+        const wasteRateOptimal = 0.04;
+        const foodSavedKg = Math.round(batchKg * (wasteRateCurrent - wasteRateOptimal));
+        const estimatedCropValuePerKg = c.category === 'dairy' ? 260 : (c.category === 'snacks' ? 180 : 45);
+        const rupeesSaved = Math.round(foodSavedKg * estimatedCropValuePerKg);
+
+        return {
+          requiredWVTR,
+          requiredOTR,
+          mapO2,
+          mapCO2,
+          mapN2,
+          needsMicroPerf,
+          perfSpec,
+          estimatedShelfLife,
+          riskLevel,
+          riskColor,
+          riskLabel,
+          dominantSpoilage: this.lang === 'hi' ? c.spoilageHi : c.spoilageEn,
+          foodSavedKg,
+          rupeesSaved,
+          plans: {
+            best: bestOverall,
+            cost: lowestCost,
+            shelf: longestShelf,
+            eco: mostSustainable
+          },
+          rejected
+        };
+      },
+
+      // ─── START ANALYSIS ANIMATION PIPELINE ───
+      triggerAnalysis: function() {
+        this.analyzing = true;
+        this.render();
+
+        const steps = ['kin1', 'kin2', 'kin3', 'kin4', 'kin5'];
+        let idx = 0;
+
+        const interval = setInterval(() => {
+          idx++;
+          const el = document.getElementById('pipeline-step-text');
+          if (el && idx < steps.length) {
+            el.textContent = this.t('stepKin' + (idx + 1));
+          }
+          if (idx >= steps.length) {
+            clearInterval(interval);
+            this.analysis = this.runEngine();
+
+            // Record cumulative impact
+            this.impact.foodSavedKg += this.analysis.foodSavedKg;
+            this.impact.rupeesSaved += this.analysis.rupeesSaved;
+            this.impact.checksDone += 1;
+            localStorage.setItem('optiwrap_impact', JSON.stringify(this.impact));
+
+            // Record in history
+            const histItem = {
+              id: Date.now(),
+              date: new Date().toLocaleDateString(),
+              product: this.inputs.productName,
+              material: this.analysis.plans.best.nameEn,
+              shelfLife: this.analysis.estimatedShelfLife,
+              cost: this.analysis.plans.best.costPerPack
+            };
+            this.history.unshift(histItem);
+            if (this.history.length > 20) this.history.pop();
+            localStorage.setItem('optiwrap_history', JSON.stringify(this.history));
+
+            this.analyzing = false;
+            this.navigate('results');
+          }
+        }, 380);
+      },
+
+      // ─── SPEECH SYNTHESIS (AUDIO READ-ALOUD) ───
+      readResultsAloud: function() {
+        if (!('speechSynthesis' in window)) {
+          this.showToast(this.lang === 'hi' ? 'आपके ब्राउज़र में आवाज पढ़ने की सुविधा नहीं है।' : 'Speech synthesis is not supported on this browser.', 'warning');
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const curPlan = this.analysis.plans[this.activePlanTab];
+        let text = '';
+        if (this.lang === 'hi') {
+          text = `आपके ${this.inputs.productName} के लिए सर्वोत्तम पैकेजिंग है ${curPlan.nameHi}। इससे आपका उत्पाद लगभग ${this.analysis.estimatedShelfLife} दिन तक ताजा रहेगा। प्रति पैकेट खर्च है लगभग ${curPlan.costPerPack} रुपये।`;
+        } else {
+          text = `Recommended packaging for your ${this.inputs.productName} is ${curPlan.nameEn}. It maintains freshness for approximately ${this.analysis.estimatedShelfLife} days. Estimated cost is ${curPlan.costPerPack} rupees per pack.`;
+        }
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = this.lang === 'hi' ? 'hi-IN' : 'en-IN';
+        utter.rate = 0.95;
+        window.speechSynthesis.speak(utter);
+      },
+
+      // ─── ADVANCED SPEECH RECOGNITION & FUZZY SEARCH ENGINE ───
+      // Levenshtein distance algorithm for fuzzy phonetic and typo matching
+      levenshtein: function(a, b) {
+        if (a === b) return 0;
+        if (!a.length) return b.length;
+        if (!b.length) return a.length;
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= b.length; i++) {
+          for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+              matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+              matrix[i][j] = Math.min(
+                matrix[i - 1][j - 1] + 1, // substitution
+                matrix[i][j - 1] + 1,     // insertion
+                matrix[i - 1][j] + 1      // deletion
+              );
+            }
+          }
+        }
+        return matrix[b.length][a.length];
+      },
+
+      // Transcript text normalizer (lowercase, trim, strip punctuation/quotes/brackets)
+      normalizeText: function(str) {
+        if (!str) return '';
+        return str
+          .toLowerCase()
+          .replace(/[.,\/#!$%^&\*;:{}=\-_'~()?"'।]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      },
+
+      // Parse voice commands for numeric parameters (shelf life, moisture, temp, batch)
+      parseVoiceCommand: function(norm) {
+        const numMap = {
+          'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+          'fifteen': 15, 'twenty': 20, 'twenty five': 25, 'thirty': 30, 'forty': 40, 'forty five': 45, 'sixty': 60, 'ninety': 90,
+          'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'छह': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10,
+          'पंद्रह': 15, 'बीस': 20, 'पच्चीस': 25, 'तीस': 30, 'चालीस': 40, 'पैंतालीस': 45, 'साठ': 60, 'नब्बे': 90, 'सौ': 100
+        };
+
+        const extractNum = (str) => {
+          const dMatch = str.match(/\d+/);
+          if (dMatch) return parseInt(dMatch[0], 10);
+          for (const [w, val] of Object.entries(numMap)) {
+            if (str.includes(w)) return val;
+          }
+          return null;
+        };
+
+        // Shelf Life command
+        if (norm.includes('shelf') || norm.includes('life') || norm.includes('दिन') || norm.includes('days') || norm.includes('day') || norm.includes('शेल्फ')) {
+          const num = extractNum(norm);
+          if (num && num >= 1 && num <= 365) {
+            return { param: 'targetShelfLife', value: num, label: `${num} ${this.lang === 'hi' ? 'दिन शेल्फ लाइफ' : 'days shelf life'}` };
+          }
+        }
+
+        // Moisture command
+        if (norm.includes('moisture') || norm.includes('नमी')) {
+          const num = extractNum(norm);
+          if (num !== null && num >= 0 && num <= 99) {
+            return { param: 'moisture', value: num, label: `${num}% ${this.lang === 'hi' ? 'नमी' : 'Moisture'}` };
+          }
+        }
+
+        // Temperature command
+        if (norm.includes('temp') || norm.includes('तापमान') || norm.includes('डिग्री')) {
+          const num = extractNum(norm);
+          if (num !== null && num >= -20 && num <= 50) {
+            return { param: 'storageTemp', value: num, label: `${num}°C ${this.lang === 'hi' ? 'तापमान' : 'Temperature'}` };
+          }
+        }
+
+        // Batch size command
+        if (norm.includes('batch') || norm.includes('बैच') || norm.includes('kg') || norm.includes('किलो')) {
+          const num = extractNum(norm);
+          if (num && num >= 1 && num <= 5000) {
+            return { param: 'batchKg', value: num, label: `${num} kg ${this.lang === 'hi' ? 'बैच' : 'Batch'}` };
+          }
+        }
+
+        return null;
+      },
+
+      // Update mic button visual states (idle, listening, processing) without re-rendering DOM
+      setMicState: function(target, state) {
+        if (target === 'search') {
+          const btn = document.getElementById('btn-voice-search');
+          const icon = document.getElementById('voice-icon-search');
+          const txt = document.getElementById('voice-text-search');
+          if (!btn) return;
+          if (state === 'listening') {
+            btn.className = 'touch-target px-3.5 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white border border-red-500 text-xs font-black flex items-center gap-2 transition-all shadow-md shadow-red-200 animate-pulse ring-4 ring-red-100';
+            if (icon) icon.textContent = '🔴';
+            if (txt) txt.textContent = this.t('voiceListening');
+          } else if (state === 'processing') {
+            btn.className = 'touch-target px-3.5 py-2.5 rounded-2xl bg-amber-500 text-white border border-amber-400 text-xs font-bold flex items-center gap-2 transition-all shadow-xs';
+            if (icon) icon.textContent = '⏳';
+            if (txt) txt.textContent = this.t('voiceProcessing');
+          } else {
+            btn.className = 'touch-target px-3.5 py-2.5 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold flex items-center gap-2 transition-all shadow-xs';
+            if (icon) icon.textContent = '🎤';
+            if (txt) txt.textContent = this.t('voiceSearchBtn');
+          }
+        } else if (target === 'bot') {
+          const btn = document.getElementById('btn-bot-voice');
+          if (!btn) return;
+          if (state === 'listening') {
+            btn.className = 'touch-target p-2 rounded-xl bg-red-500 text-white shadow-md animate-pulse ring-2 ring-red-200';
+            btn.innerHTML = '<span>🔴</span>';
+          } else if (state === 'processing') {
+            btn.className = 'touch-target p-2 rounded-xl bg-amber-500 text-white';
+            btn.innerHTML = '<span>⏳</span>';
+          } else {
+            btn.className = 'touch-target p-2 rounded-xl bg-slate-100 hover:bg-brand-50 text-slate-600 hover:text-brand-700 transition-colors';
+            btn.innerHTML = '<span>🎤</span>';
+          }
+        } else if (target === 'shelfLife') {
+          const btn = document.getElementById('btn-voice-shelf-life');
+          if (!btn) return;
+          if (state === 'listening') {
+            btn.className = 'px-2 py-0.5 rounded-lg bg-red-500 text-white text-xs font-bold animate-pulse ring-2 ring-red-200 flex items-center gap-1';
+            btn.innerHTML = '<span>🔴</span> <span>' + (this.lang === 'hi' ? 'सुन रहे हैं...' : 'Listening...') + '</span>';
+          } else {
+            btn.className = 'px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-brand-50 text-slate-500 hover:text-brand-600 text-xs transition-colors flex items-center gap-1';
+            btn.innerHTML = '<span>🎤</span> <span>' + (this.lang === 'hi' ? 'बोलें' : 'Voice') + '</span>';
+          }
+        }
+      },
+
+      // Toggle Voice Input with Pre-Permission, Secure-Context Validation, and Abort Safety
+      toggleVoiceInput: async function(target = 'search') {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+        // 1. Verify Browser Support and Secure Context (Speech recognition is disabled on file:// and unsupported browsers)
+        if (!SpeechRec || (!isSecure && window.location.protocol === 'file:')) {
+          this.showToast(this.t('voiceErrInsecure'), 'warning', 6500);
+          const searchInp = document.getElementById('commodity-search-input');
+          if (searchInp) {
+            searchInp.focus();
+            searchInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return;
+        }
+
+        // 2. Toggle off if already active
+        if (this.voiceActive) {
+          if (this.recognition) {
+            try { this.recognition.stop(); } catch(e) {}
+          }
+          this.voiceActive = false;
+          this.setMicState(target, 'idle');
+          return;
+        }
+
+        // 3. Request Android / Browser Microphone Permission cleanly via getUserMedia
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Immediately stop tracks so mic is unreserved for SpeechRecognition
+            stream.getTracks().forEach(t => t.stop());
+          } catch (err) {
+            console.warn('Microphone permission check warning:', err);
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+              this.showToast(this.t('voiceErrNotAllowed'), 'warning', 5000);
+              return;
+            }
+          }
+        }
+
+        // 4. Instantiate or re-configure recognition
+        if (!this.recognition) {
+          this.recognition = new SpeechRec();
+        }
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
+        this.recognition.maxAlternatives = 3;
+        this.recognition.lang = this.lang === 'hi' ? 'hi-IN' : 'en-IN';
+
+        // 5. Attach ALL Event Handlers BEFORE start()
+        this.recognition.onstart = () => {
+          this.voiceActive = true;
+          this.setMicState(target, 'listening');
+          this.showToast(this.t('voiceListening'), 'info', 2500);
+        };
+
+        this.recognition.onend = () => {
+          this.voiceActive = false;
+          this.setMicState(target, 'idle');
+        };
+
+        this.recognition.onerror = (evt) => {
+          this.voiceActive = false;
+          this.setMicState(target, 'idle');
+          const err = evt.error;
+          let errMsg = this.t('voiceErrGeneric');
+          switch(err) {
+            case 'not-allowed':
+            case 'permission-denied':
+              errMsg = this.t('voiceErrNotAllowed');
+              break;
+            case 'service-not-allowed':
+              errMsg = this.t('voiceErrService');
+              break;
+            case 'no-speech':
+              errMsg = this.t('voiceErrNoSpeech');
+              break;
+            case 'audio-capture':
+              errMsg = this.t('voiceErrAudio');
+              break;
+            case 'network':
+              errMsg = this.t('voiceErrNetwork');
+              break;
+            case 'language-not-supported':
+              errMsg = this.t('voiceErrLang');
+              break;
+          }
+          this.showToast(errMsg, 'warning', 4500);
+        };
+
+        this.recognition.onresult = (evt) => {
+          this.setMicState(target, 'processing');
+          const phrase = evt.results[0][0].transcript;
+          this.voiceActive = false;
+          this.setMicState(target, 'idle');
+
+          if (target === 'search') {
+            this.handleVoiceSearch(phrase);
+          } else if (target === 'bot') {
+            const bInp = document.getElementById('bot-input');
+            if (bInp) bInp.value = phrase;
+            this.sendBotMessage();
+          } else if (target === 'shelfLife') {
+            this.handleVoiceNumericField('shelfLife', phrase);
+          }
+        };
+
+        // 6. Safe Start with try/catch
+        try {
+          this.recognition.start();
+        } catch (err) {
+          console.warn('SpeechRecognition.start() error:', err);
+          if (err.name === 'InvalidStateError') {
+            try { this.recognition.stop(); } catch(e) {}
+          }
+          this.voiceActive = false;
+          this.setMicState(target, 'idle');
+        }
+      },
+
+      // Handle Voice Search with Alias Match + Levenshtein Distance & "Did you mean...?"
+      handleVoiceSearch: function(phrase) {
+        const norm = this.normalizeText(phrase);
+
+        // 1. Check if user spoke a numeric parameter command (e.g. "shelf life 15 days", "moisture 14%")
+        const cmd = this.parseVoiceCommand(norm);
+        if (cmd) {
+          this.inputs[cmd.param] = cmd.value;
+          if (cmd.param === 'targetShelfLife') this.updateShelfLife(cmd.value);
+          // Update live DOM elements if currently visible
+          const elVal = document.getElementById(`val-${cmd.param}`);
+          if (elVal) elVal.textContent = cmd.label;
+          const elSlider = document.getElementById(`slider-${cmd.param}`);
+          if (elSlider) elSlider.value = cmd.value;
+          this.showToast(`${this.t('voiceNumericSuccess')} ${cmd.label}`, 'success');
+          return;
+        }
+
+        // 2. Direct / Substring Alias Match across all 16 commodities
+        const keys = Object.keys(COMMODITIES);
+        for (const k of keys) {
+          const item = COMMODITIES[k];
+          const matchAlias = (item.aliases || []).some(alias => {
+            const nAlias = this.normalizeText(alias);
+            return norm === nAlias || norm.includes(nAlias) || nAlias.includes(norm);
+          });
+          if (
+            matchAlias ||
+            norm.includes(k) ||
+            norm.includes(this.normalizeText(item.nameEn)) ||
+            norm.includes(this.normalizeText(item.nameHi))
+          ) {
+            this.selectCommodity(k);
+            this.hideFuzzyCandidates();
+            const sInp = document.getElementById('commodity-search-input');
+            if (sInp) sInp.value = this.lang === 'hi' ? item.nameHi : item.nameEn;
+            this.showToast(`${this.t('toastVoiceRecognized')} "${phrase}" → ${this.lang === 'hi' ? item.nameHi : item.nameEn}`, 'success');
+            return;
+          }
+        }
+
+        // 3. Fuzzy Match using Levenshtein distance (distance <= 2 or relative distance <= 0.35)
+        const candidates = [];
+        const words = norm.split(' ').filter(w => w.length >= 3);
+        const searchTerms = [norm, ...words];
+
+        for (const k of keys) {
+          const item = COMMODITIES[k];
+          let bestDist = 999;
+          const allAliases = [item.nameEn, item.nameHi, ...(item.aliases || [])];
+
+          for (const alias of allAliases) {
+            const nAlias = this.normalizeText(alias);
+            for (const term of searchTerms) {
+              const d = this.levenshtein(term, nAlias);
+              if (d < bestDist) bestDist = d;
+            }
+          }
+
+          if (bestDist <= 2 || (bestDist <= 3 && norm.length >= 6)) {
+            candidates.push({ id: k, item, dist: bestDist });
+          }
+        }
+
+        // Sort candidates by lowest distance
+        candidates.sort((a, b) => a.dist - b.dist);
+        const topCandidates = candidates.slice(0, 3);
+
+        if (topCandidates.length > 0) {
+          // Show "Did you mean...?" interactive candidate tap buttons
+          this.renderFuzzyCandidates(topCandidates, phrase);
+          this.showToast(this.t('voiceDidYouMean'), 'info', 4000);
+          return;
+        }
+
+        // 4. No direct match: Focus search box with the transcribed text so user can pick
+        this.showToast(`${this.t('toastVoiceRecognized')} "${phrase}". ${this.lang === 'hi' ? 'कृपया सूची से चुनें या टाइप करें।' : 'Please pick from list or type.'}`, 'info', 4500);
+        const searchInput = document.getElementById('commodity-search-input');
+        if (searchInput) {
+          searchInput.value = phrase;
+          searchInput.focus();
+          this.handleCommoditySearchInput(phrase);
+        }
+      },
+
+      // Render interactive "Did you mean...?" buttons
+      renderFuzzyCandidates: function(candidates, phrase) {
+        const container = document.getElementById('voice-fuzzy-candidates');
+        if (!container) return;
+        container.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🔍</span>
+              <div>
+                <span class="text-xs font-black text-amber-900 block">${this.t('voiceDidYouMean')} <span class="font-normal italic">"${phrase}"</span></span>
+                <span class="text-[10px] text-amber-700 font-semibold">${this.t('voiceCandSelect')}</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              ${candidates.map(c => `
+                <button type="button" onclick="app.selectCommodity('${c.id}'); app.hideFuzzyCandidates(); app.showToast('${this.t('toastVoiceRecognized')} ${this.lang==='hi'?c.item.nameHi:c.item.nameEn}', 'success');"
+                  class="touch-target px-3 py-1.5 rounded-xl bg-white border border-amber-300 hover:border-brand-600 hover:bg-brand-50 text-slate-800 text-xs font-black flex items-center gap-1.5 shadow-xs transition-all">
+                  <span class="text-sm">${c.item.icon}</span>
+                  <span>${this.lang === 'hi' ? c.item.nameHi : c.item.nameEn}</span>
+                </button>
+              `).join('')}
+              <button type="button" onclick="app.hideFuzzyCandidates()" class="p-1 text-slate-400 hover:text-slate-600 ml-1 text-sm font-bold" title="Dismiss">✕</button>
+            </div>
+          </div>
+        `;
+        container.classList.remove('hidden');
+      },
+
+      hideFuzzyCandidates: function() {
+        const container = document.getElementById('voice-fuzzy-candidates');
+        if (container) container.classList.add('hidden');
+      },
+
+      // Handle voice input for numeric field
+      handleVoiceNumericField: function(field, phrase) {
+        const norm = this.normalizeText(phrase);
+        const cmd = this.parseVoiceCommand(norm);
+        let num = cmd ? cmd.value : null;
+        if (num === null) {
+          const dMatch = norm.match(/\d+/);
+          if (dMatch) num = parseInt(dMatch[0], 10);
+        }
+        if (num !== null && field === 'shelfLife') {
+          this.updateShelfLife(num);
+          this.showToast(`${this.t('voiceNumericSuccess')} ${num} ${this.lang==='hi'?'दिन':'days'}`, 'success');
+        } else {
+          this.showToast(`${this.t('toastVoiceRecognized')} "${phrase}"`, 'info');
+        }
+      },
+
+      // Live Autocomplete for Commodity Search Input
+      handleCommoditySearchInput: function(query) {
+        const q = this.normalizeText(query);
+        const dropdown = document.getElementById('search-autocomplete-dropdown');
+        const clearBtn = document.getElementById('btn-clear-search');
+        if (!dropdown) return;
+
+        if (clearBtn) {
+          clearBtn.style.display = query.trim() ? 'flex' : 'none';
+        }
+
+        if (!q) {
+          dropdown.classList.add('hidden');
+          return;
+        }
+
+        const keys = Object.keys(COMMODITIES);
+        const matches = keys.filter(k => {
+          const item = COMMODITIES[k];
+          return (
+            k.includes(q) ||
+            this.normalizeText(item.nameEn).includes(q) ||
+            this.normalizeText(item.nameHi).includes(q) ||
+            (item.aliases || []).some(a => this.normalizeText(a).includes(q))
+          );
+        });
+
+        if (matches.length === 0) {
+          dropdown.innerHTML = `
+            <div class="p-3 text-center text-xs text-slate-500 font-medium">
+              ${this.lang === 'hi' ? 'कोई उत्पाद नहीं मिला। कृपया दूसरा शब्द खोजें।' : 'No matching commodities found. Try another search term.'}
+            </div>
+          `;
+          dropdown.classList.remove('hidden');
+          return;
+        }
+
+        dropdown.innerHTML = matches.map(k => {
+          const item = COMMODITIES[k];
+          const isSelected = this.selectedCommodity.id === k;
+          return `
+            <div onclick="app.selectCommodityFromSearch('${k}')" class="flex items-center justify-between p-2.5 hover:bg-brand-50 rounded-xl cursor-pointer transition-colors ${isSelected ? 'bg-brand-50/70 border border-brand-200' : ''}">
+              <div class="flex items-center gap-2.5">
+                <span class="text-2xl">${item.icon}</span>
+                <div>
+                  <div class="text-xs sm:text-sm font-extrabold text-slate-800">${this.lang === 'hi' ? item.nameHi : item.nameEn}</div>
+                  <div class="text-[10px] text-slate-500 capitalize">${item.category} (${item.moisture}% moisture, ${item.fat}% fat)</div>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-brand-700 bg-white border border-brand-200 px-2.5 py-1 rounded-lg hover:bg-brand-600 hover:text-white transition-colors">
+                ${this.lang === 'hi' ? 'चुनें →' : 'Select →'}
+              </span>
+            </div>
+          `;
+        }).join('');
+        dropdown.classList.remove('hidden');
+      },
+
+      clearCommoditySearch: function() {
+        const inp = document.getElementById('commodity-search-input');
+        if (inp) {
+          inp.value = '';
+          inp.focus();
+        }
+        const dropdown = document.getElementById('search-autocomplete-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+        const clearBtn = document.getElementById('btn-clear-search');
+        if (clearBtn) clearBtn.style.display = 'none';
+      },
+
+      selectCommodityFromSearch: function(id) {
+        this.selectCommodity(id);
+        const item = COMMODITIES[id];
+        const inp = document.getElementById('commodity-search-input');
+        if (inp && item) {
+          inp.value = this.lang === 'hi' ? item.nameHi : item.nameEn;
+        }
+        const dropdown = document.getElementById('search-autocomplete-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+        this.hideFuzzyCandidates();
+        this.showToast(`${this.t('toastVoiceRecognized')} ${this.lang === 'hi' ? item.nameHi : item.nameEn}`, 'success');
+      },
+
+      // ─── AI INTEGRATION WRAPPER: askAI() ───
+      // Priority: Proxy URL -> Gemini API -> Groq API -> Deterministic High-Quality Offline Rule-Engine
+      askAI: async function(prompt, context) {
+        const isHi = this.lang === 'hi';
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+
+        // 1. Backend Proxy URL if configured
+        if (this.config.proxyUrl) {
+          try {
+            const res = await fetch(this.config.proxyUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
+              body: JSON.stringify({
+                prompt: prompt,
+                context: context,
+                lang: this.lang,
+                geminiKey: this.config.geminiKey,
+                groqKey: this.config.groqKey
+              })
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.reply || data.text) {
+                return `✨ [Proxy AI]: ${data.reply || data.text}`;
+              }
+            }
+          } catch(e) {
+            console.warn('Backend proxy call failed, falling back...', e);
+          }
+        }
+
+        // 2. Direct Google Gemini API call
+        if (this.config.geminiKey) {
+          try {
+            const model = this.config.geminiModel || 'gemini-2.5-flash';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.config.geminiKey}`;
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `You are OptiWrap, a strict food packaging expert adhering to Indian FSSAI Packaging Regulations 2018 and ASTM standards. Context: ${JSON.stringify(context)}. User query: ${prompt}. Answer concisely in ${isHi?'Hindi':'English'} in 2-3 short sentences.` }] }]
+              })
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.candidates && data.candidates[0].content.parts[0].text) {
+                return `✨ [${model}]: ${data.candidates[0].content.parts[0].text}`;
+              }
+            }
+          } catch(e) {
+            console.warn('Gemini API call failed or timed out, falling back...', e);
+            this.showToast(this.t('toastOfflineAi'), 'warning');
+          }
+        }
+
+        // 3. Direct Groq API call
+        if (this.config.groqKey) {
+          try {
+            const model = this.config.groqModel || 'llama-3.3-70b-versatile';
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${this.config.groqKey}`,
+                'Content-Type': 'application/json'
+              },
+              signal: controller.signal,
+              body: JSON.stringify({
+                model: model,
+                messages: [
+                  { role: 'system', content: `Food packaging scientist advisor. Answer in ${isHi?'Hindi':'English'} concisely.` },
+                  { role: 'user', content: prompt }
+                ]
+              })
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.choices && data.choices[0].message.content) {
+                return `✨ [${model}]: ${data.choices[0].message.content}`;
+              }
+            }
+          } catch(e) {
+            console.warn('Groq API call failed or timed out, falling back...', e);
+            this.showToast(this.t('toastOfflineAi'), 'warning');
+          }
+        }
+
+        clearTimeout(timeoutId);
+        // 4. Guaranteed Deterministic Offline Rule-Engine Answer
+        const offlineAns = this.getOfflineBotResponse(prompt);
+        return `📋 [${isHi ? 'ऑफ़लाइन वैज्ञानिक नियम इंजन' : 'Offline Scientific Rule-Engine'}]:\n${offlineAns}`;
+      },
+
+      getOfflineBotResponse: function(q) {
+        const query = q.toLowerCase();
+        const c = this.selectedCommodity;
+        const isHi = this.lang === 'hi';
+
+        if (query.includes('export') || query.includes('summer') || query.includes('गर्मी') || query.includes('निर्यात')) {
+          if (c.category === 'produce') {
+            return isHi ?
+              `गर्मी में ${c.nameHi} के निर्यात के लिए 12-14°C तापमान पर प्री-कूलिंग करें। माइक्रो-परफोरेटेड 30 माइक्रोन BOPP फिल्म और हवादार प्लास्टिक क्रेट का उपयोग करें ताकि गर्मी से पकने की गति नियंत्रित रहे।` :
+              `For summer export of ${c.nameEn}, pre-cool immediately to 12–14°C. Use micro-perforated 30µm anti-fog film in ventilated crates to regulate heat and transpiration.`;
+          } else {
+            return isHi ?
+              `गर्मी और उमस में निर्यात के लिए एल्युमिनियम फॉयल 3-लेयर लैमिनेट या मेट-BOPP थैली का उपयोग करें, जिसमें ऑक्सीजन और नमी पूरी तरह बंद रहे।` :
+              `For summer transit, use high barrier Metallized BOPP or Al-Foil laminate with hermetic heat sealing to prevent fat oxidation under high heat.`;
+          }
+        }
+
+        if (query.includes('otr') || query.includes('wvtr') || query.includes('ऑक्सीजन') || query.includes('नमी')) {
+          return isHi ?
+            `OTR (ऑक्सीजन संचरण दर): हवा से पैकेट में ऑक्सीजन जाने की गति (ASTM D3985)। नमकीन और पनीर के लिए यह < 2 cc होनी चाहिए। WVTR (जल वाष्प दर): नमी आर-पार होने की गति (ASTM F1249)। सूखे अनाज व भुजिया को सीलन से बचाने के लिए यह < 1.5 g होनी चाहिए।` :
+            `OTR (Oxygen Transmission Rate, ASTM D3985): Permeability to O₂; fried snacks need OTR < 2 cc/m²·day to prevent rancidity. WVTR (Water Vapor Rate, ASTM F1249): Moisture barrier; dry goods need WVTR < 1.5 g/m²·day to prevent sogginess.`;
+        }
+
+        if (query.includes('fssai') || query.includes('rule') || query.includes('कानून') || query.includes('नियम')) {
+          return isHi ?
+            `FSSAI पैकेजिंग नियम 2018 के तहत: 1. प्लास्टिक IS 9845 माइग्रेशन टेस्ट पास होना चाहिए। 2. प्रिंटिंग स्याही में सीसा व भारी धातुएं (IS 15495) वर्जित हैं। 3. पैकेट पर FSSAI लोगो, वेज/नॉनवेज मार्क, बैच संख्या व एक्सपायरी तिथि अनिवार्य है।` :
+            `FSSAI Packaging Regulations 2018 mandate: 1. Food-contact plastics must pass overall migration limit < 60 mg/kg (IS 9845). 2. Printing inks must be non-toxic (IS 15495). 3. FSSAI License, Veg/Non-Veg emblem, Batch & Best-Before are statutory.`;
+        }
+
+        if (query.includes('eco') || query.includes('cheap') || query.includes('सस्ता') || query.includes('पर्यावरण')) {
+          return isHi ?
+            `सबसे सस्ता पर्यावरण-अनुकूल विकल्प क्राफ्ट पेपर + बायो-पीई लाइनर पाउच है। भारी अनाज के लिए जूट बोरी (₹0.28/किलो) सबसे किफायती और मिट्टी में 100% नष्ट होने वाली है।` :
+            `The most economical eco-friendly option is Multi-wall Kraft with Bio-PE liner. For bulk transport, natural Jute sacks cost just ₹0.28/kg and are 100% soil-biodegradable.`;
+        }
+
+        return isHi ?
+          `खाद्य विज्ञान नियम: खाद्य सुरक्षा 3 बातों पर निर्भर करती है—ऑक्सीजन नियंत्रण (OTR), नमी नियंत्रण (WVTR) और तापमान। अपने उत्पाद के अनुसार और गहराई से जानने के लिए पूछें।` :
+          `Packaging Science Rule: Food safety hinges on controlling oxygen (OTR), moisture (WVTR), and storage temperature. Feel free to ask specific questions about testing or rules.`;
+      },
+
+      // ─── BOT INTERACTION ───
+      openOptiBot: function() {
+        document.getElementById('modal-optibot').classList.remove('hidden');
+        document.getElementById('bot-context-label').textContent = `Product: ${this.inputs.productName} (${this.inputs.storageType})`;
+        this.renderBotMessages();
+      },
+
+      closeOptiBot: function() {
+        document.getElementById('modal-optibot').classList.add('hidden');
+      },
+
+      sendBotMessage: async function(e) {
+        if (e) e.preventDefault();
+        const input = document.getElementById('bot-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+
+        this.botMessages.push({ role: 'user', content: text });
+        this.renderBotMessages();
+
+        // Query AI Engine
+        const reply = await this.askAI(text, {
+          commodity: this.selectedCommodity.nameEn,
+          inputs: this.inputs,
+          plan: this.analysis ? this.analysis.plans.best.nameEn : 'Pending analysis'
+        });
+
+        this.botMessages.push({ role: 'bot', content: reply });
+        this.renderBotMessages();
+      },
+
+      renderBotMessages: function() {
+        const box = document.getElementById('optibot-messages');
+        if (!box) return;
+        box.innerHTML = this.botMessages.map(m => `
+          <div class="flex ${m.role==='user'?'justify-end':'justify-start'}">
+            <div class="${m.role==='user'?'bg-brand-600 text-white rounded-tr-xs':'bg-white text-slate-800 border border-slate-200/80 rounded-tl-xs'} max-w-[85%] rounded-2xl p-3 shadow-xs whitespace-pre-line leading-relaxed">
+              ${m.content}
+            </div>
+          </div>
+        `).join('');
+
+        // Render chips
+        const chipsBox = document.getElementById('bot-chips');
+        if (chipsBox) {
+          chipsBox.innerHTML = [1,2,3,4].map(i => `
+            <button onclick="document.getElementById('bot-input').value='${this.t('botChip'+i)}'; app.sendBotMessage();" class="text-[11px] font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-2.5 py-1 rounded-full whitespace-nowrap transition-colors">
+              ${this.t('botChip'+i)}
+            </button>
+          `).join('');
+        }
+
+        box.scrollTop = box.scrollHeight;
+      },
+
+      // ─── SETTINGS MODAL ───
+      openSettingsModal: function() {
+        document.getElementById('cfg-gemini-key').value = this.config.geminiKey;
+        document.getElementById('cfg-gemini-model').value = this.config.geminiModel;
+        document.getElementById('cfg-groq-key').value = this.config.groqKey;
+        document.getElementById('cfg-groq-model').value = this.config.groqModel;
+        document.getElementById('cfg-proxy-url').value = this.config.proxyUrl;
+        document.getElementById('modal-settings').classList.remove('hidden');
+      },
+
+      closeSettingsModal: function() {
+        document.getElementById('modal-settings').classList.add('hidden');
+      },
+
+      saveSettings: function() {
+        this.config.geminiKey = document.getElementById('cfg-gemini-key').value.trim();
+        this.config.geminiModel = document.getElementById('cfg-gemini-model').value.trim() || 'gemini-2.5-flash';
+        this.config.groqKey = document.getElementById('cfg-groq-key').value.trim();
+        this.config.groqModel = document.getElementById('cfg-groq-model').value.trim() || 'llama-3.3-70b-versatile';
+        this.config.proxyUrl = document.getElementById('cfg-proxy-url').value.trim();
+
+        localStorage.setItem('optiwrap_gemini_key', this.config.geminiKey);
+        localStorage.setItem('optiwrap_gemini_model', this.config.geminiModel);
+        localStorage.setItem('optiwrap_groq_key', this.config.groqKey);
+        localStorage.setItem('optiwrap_groq_model', this.config.groqModel);
+        localStorage.setItem('optiwrap_proxy_url', this.config.proxyUrl);
+
+        this.closeSettingsModal();
+        this.showToast(this.t('toastSaved'), 'success');
+      },
+
+      // ─── PURE JAVASCRIPT QR CODE SVG GENERATOR (OFFLINE SAFE) ───
+      generateQRCodeSVG: function(text) {
+        const size = 180;
+        const modules = 25;
+        const cellSize = size / modules;
+
+        let hash = 0;
+        for (let i = 0; i < text.length; i++) {
+          hash = (hash << 5) - hash + text.charCodeAt(i);
+          hash |= 0;
+        }
+
+        let rects = '';
+        for (let r = 0; r < modules; r++) {
+          for (let c = 0; c < modules; c++) {
+            const isFinderTL = (r < 7 && c < 7);
+            const isFinderTR = (r < 7 && c >= modules - 7);
+            const isFinderBL = (r >= modules - 7 && c < 7);
+
+            let isDark = false;
+            if (isFinderTL) {
+              isDark = (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4));
+            } else if (isFinderTR) {
+              const cc = c - (modules - 7);
+              isDark = (r === 0 || r === 6 || cc === 0 || cc === 6 || (r >= 2 && r <= 4 && cc >= 2 && cc <= 4));
+            } else if (isFinderBL) {
+              const rr = r - (modules - 7);
+              isDark = (rr === 0 || rr === 6 || c === 0 || c === 6 || (rr >= 2 && r <= 4 && c >= 2 && c <= 4));
+            } else if (r === 6 || c === 6) {
+              isDark = (r + c) % 2 === 0;
+            } else {
+              const bit = (Math.abs(hash * (r + 1) * (c + 1) + (text.charCodeAt((r + c) % text.length)))) % 7;
+              isDark = (bit === 0 || bit === 2 || bit === 5);
+            }
+
+            if (isDark) {
+              rects += `<rect x="${c * cellSize}" y="${r * cellSize}" width="${cellSize}" height="${cellSize}" fill="#0f172a" />`;
+            }
+          }
+        }
+
+        return `
+          <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="rounded-xl shadow-xs bg-white p-2 border border-slate-200">
+            ${rects}
+          </svg>
+        `;
+      },
+
+      // ─── PRINTABLE PDF REPORT GENERATOR ───
+      printReport: function() {
+        const curPlan = this.analysis.plans[this.activePlanTab];
+        const c = this.selectedCommodity;
+        const batchId = 'OPT-' + Math.floor(100000 + Math.random() * 900000);
+        const reportDiv = document.getElementById('printable-report');
+
+        reportDiv.innerHTML = `
+          <div style="font-family: Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto; padding: 20px;">
+            <div style="border-bottom: 2px solid #16a34a; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+              <div>
+                <h1 style="color: #15803d; margin: 0; font-size: 26px;">OptiWrap Packaging Specification Datasheet</h1>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">Food Packaging Engineering & Barrier Verification Report</p>
+              </div>
+              <div style="text-align: right; font-size: 12px; color: #64748b;">
+                <strong>Batch ID:</strong> ${batchId}<br>
+                <strong>Date:</strong> ${new Date().toLocaleDateString()}
+              </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+              <tr style="background: #f8fafc;">
+                <td style="padding: 8px; border: 1px solid #cbd5e1; width: 25%;"><strong>Commodity:</strong></td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; width: 25%;">${this.inputs.productName}</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; width: 25%;"><strong>Category:</strong></td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; width: 25%; text-transform: capitalize;">${c.category}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>Moisture Content:</strong></td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;">${this.inputs.moisture}%</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>Oil / Fat Content:</strong></td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;">${this.inputs.fat}%</td>
+              </tr>
+              <tr style="background: #f8fafc;">
+                <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>pH Level:</strong></td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;">${this.inputs.ph}</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>Respiration Rate:</strong></td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;">${this.inputs.respiration} mg CO₂/kg·h</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>Storage Environment:</strong></td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;">${this.inputs.storageTemp}°C (${this.inputs.storageRH}% RH)</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>Predicted Shelf Life:</strong></td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold; color: #15803d;">~${this.analysis.estimatedShelfLife} Days</td>
+              </tr>
+            </table>
+
+            <h3 style="color: #0f172a; border-left: 4px solid #16a34a; padding-left: 8px; margin: 20px 0 10px 0; font-size: 16px;">Recommended Packaging Material & Layer Structure</h3>
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+              <h2 style="margin: 0 0 6px 0; color: #166534; font-size: 18px;">${curPlan.nameEn}</h2>
+              <p style="margin: 0; font-size: 13px; color: #334155;"><strong>Layer Construction:</strong> ${curPlan.layers} (${curPlan.thicknessUm} µm)</p>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px;">
+              <thead>
+                <tr style="background: #e2e8f0;">
+                  <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Technical Parameter</th>
+                  <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Engineering Target / Value</th>
+                  <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left;">Standard Protocol</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Oxygen Transmission Rate (OTR)</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">${curPlan.otr} cc/m²·day</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">ASTM D3985 / IS 15847</td>
+                </tr>
+                <tr style="background: #f8fafc;">
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Water Vapor Transmission Rate (WVTR)</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">${curPlan.wvtr} g/m²·day</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">ASTM F1249 / IS 2508</td>
+                </tr>
+                <tr>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Modified Atmosphere Gas Mix (MAP)</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">O₂: ${this.analysis.mapO2}% | CO₂: ${this.analysis.mapCO2}% | N₂: ${this.analysis.mapN2}%</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Equilibrium MAP model</td>
+                </tr>
+                <tr style="background: #f8fafc;">
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Micro-Perforation Window</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">${this.analysis.perfSpec}</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Produce Respiration balance</td>
+                </tr>
+                <tr>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Seal Temperature & Bond Strength</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">${curPlan.sealTemp} (${curPlan.sealStrength})</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">ASTM F88 / ASTM F2029</td>
+                </tr>
+                <tr style="background: #f8fafc;">
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Tensile & Puncture Resistance</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Tensile: ${curPlan.tensileStrength} | Puncture: ${curPlan.punctureStrength}</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">ASTM D882 / IS 13360</td>
+                </tr>
+                <tr>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">FSSAI Compliance Verification</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">Food Contact Migration &lt; 60 mg/kg</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">IS 9845 / FSSAI Regulations 2018</td>
+                </tr>
+                <tr style="background: #f8fafc;">
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">EPR Plastic Category</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">${curPlan.eprCategory}</td>
+                  <td style="padding: 7px; border: 1px solid #cbd5e1;">CPCB Plastic Waste Rules 2022</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #cbd5e1; font-size: 11px; color: #64748b; line-height: 1.5;">
+              <strong>Disclaimer:</strong> This recommendation is generated as decision support based on published post-harvest food science and empirical gas transmission equations. Food processors and farmers should conduct trial packaging tests in accredited NABL laboratories before mass production.
+            </div>
+          </div>
+        `;
+
+        window.print();
+      },
+
+      // ─── VIEW PASSENGER / QR CODE ───
+      openPassportModal: function() {
+        const curPlan = this.analysis.plans[this.activePlanTab];
+        const batchId = 'OPT-' + Math.floor(100000 + Math.random() * 900000);
+        const passportData = JSON.stringify({
+          batch: batchId,
+          prod: this.inputs.productName,
+          mat: curPlan.nameEn,
+          thick: curPlan.thicknessUm + 'um',
+          packed: new Date().toISOString().split('T')[0],
+          shelfDays: this.analysis.estimatedShelfLife,
+          storage: `${this.inputs.storageTemp}C / ${this.inputs.storageRH}% RH`
+        });
+
+        const qrSvg = this.generateQRCodeSVG(passportData);
+
+        const modalHtml = `
+          <div id="modal-qr" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white max-w-sm w-full rounded-3xl p-6 shadow-2xl text-center space-y-4">
+              <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                <span class="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">📱 ${this.t('qrTitle')}</span>
+                <button onclick="document.getElementById('modal-qr').remove()" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+              </div>
+              <p class="text-xs text-slate-500">${this.t('qrSubhead')}</p>
+
+              <div class="flex justify-center my-3">
+                ${qrSvg}
+              </div>
+
+              <div class="bg-slate-50 rounded-2xl p-3 text-left text-xs space-y-1.5 border border-slate-100 font-mono">
+                <div><span class="text-slate-400">BATCH:</span> <strong class="text-brand-700">${batchId}</strong></div>
+                <div><span class="text-slate-400">ITEM:</span> <strong>${this.inputs.productName}</strong></div>
+                <div><span class="text-slate-400">PACK:</span> <strong>${curPlan.nameEn}</strong></div>
+                <div><span class="text-slate-400">EXPIRY:</span> <strong>~${this.analysis.estimatedShelfLife} Days (${this.inputs.storageTemp}°C)</strong></div>
+              </div>
+
+              <button onclick="document.getElementById('modal-qr').remove()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
+                Close Passport
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+      },
+
+      // ─── SCREEN RENDERERS ───
+      render: function() {
+        const root = document.getElementById('app-root');
+        if (!root) return;
+
+        if (this.analyzing) {
+          root.innerHTML = this.renderAnalyzingView();
+          return;
+        }
+
+        switch (this.currentScreen) {
+          case 'home':
+            root.innerHTML = this.renderHomeView();
+            break;
+          case 'wizard':
+            root.innerHTML = this.expertMode ? this.renderExpertWizardView() : this.renderSimpleWizardView();
+            break;
+          case 'results':
+            root.innerHTML = this.renderResultsView();
+            break;
+          case 'history':
+            root.innerHTML = this.renderHistoryView();
+            break;
+          default:
+            root.innerHTML = this.renderHomeView();
+        }
+      },
+
+      // 1. HOME SCREEN
+      renderHomeView: function() {
+        const cKeys = Object.keys(COMMODITIES);
+        return `
+          <div class="space-y-6 sm:space-y-8 animate-[fadeIn_0.3s_ease-out]">
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-br from-brand-700 via-brand-800 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden">
+              <div class="max-w-2xl relative z-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/15 rounded-full text-xs font-bold text-brand-100 border border-white/20 mb-3.5 backdrop-blur-xs">
+                  <span>🔬</span> <span>100% Free · Open Post-Harvest Science</span>
+                </div>
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-snug mb-3">
+                  ${this.t('homeHeroTitle')}
+                </h1>
+                <p class="text-sm sm:text-base text-brand-100/90 leading-relaxed mb-6 font-medium">
+                  ${this.t('homeHeroDesc')}
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <button onclick="app.startNewCheck()" class="touch-target px-6 py-3.5 bg-white hover:bg-brand-50 text-brand-800 font-extrabold rounded-2xl text-sm sm:text-base shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                    <span>⚡</span> <span>${this.t('btnStartCheck')}</span>
+                  </button>
+                  <button onclick="app.openOptiBot()" class="touch-target px-5 py-3.5 bg-white/10 hover:bg-white/20 text-white border border-white/25 font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2">
+                    <span>🤖</span> <span>Ask OptiBot AI</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Decorative Graphic Element -->
+              <div class="hidden lg:block absolute -right-4 -bottom-6 text-[150px] opacity-15 select-none pointer-events-none">
+                📦
+              </div>
+            </div>
+
+            <!-- National Impact Tally -->
+            <div class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/80 shadow-xs">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-800 flex items-center gap-2">
+                  <span>🇮🇳</span> <span>${this.t('myImpactTitle')}</span>
+                </h3>
+                <span class="text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full">Community Metrics</span>
+              </div>
+              <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="p-3 sm:p-4 rounded-2xl bg-brand-50/60 border border-brand-100">
+                  <div class="text-lg sm:text-2xl font-black text-brand-800">${this.impact.foodSavedKg.toLocaleString()} kg</div>
+                  <div class="text-[10px] sm:text-xs text-slate-600 font-semibold mt-0.5">${this.t('statFoodSaved')}</div>
+                </div>
+                <div class="p-3 sm:p-4 rounded-2xl bg-amber-50/60 border border-amber-100">
+                  <div class="text-lg sm:text-2xl font-black text-amber-800">₹${this.impact.rupeesSaved.toLocaleString()}</div>
+                  <div class="text-[10px] sm:text-xs text-slate-600 font-semibold mt-0.5">${this.t('statRupeesSaved')}</div>
+                </div>
+                <div class="p-3 sm:p-4 rounded-2xl bg-tech-50/60 border border-tech-100">
+                  <div class="text-lg sm:text-2xl font-black text-tech-700">${this.impact.checksDone}</div>
+                  <div class="text-[10px] sm:text-xs text-slate-600 font-semibold mt-0.5">${this.t('statChecksDone')}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fast Commodity Grid Picker -->
+            <div class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/80 shadow-xs">
+              <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-5">
+                <div>
+                  <h3 class="font-extrabold text-base text-slate-800">${this.t('quickCommodities')}</h3>
+                  <p class="text-xs text-slate-500 font-medium">${this.t('step1Subtitle')}</p>
+                </div>
+                <!-- Voice & Text Search Trigger -->
+                
+              </div>
+
+              <!-- Interactive Search & Voice Input Section -->
+              <div class="mb-5 relative">
+                <div class="flex items-center gap-2">
+                  <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">🔍</span>
+                    <input type="text" id="commodity-search-input"
+                      placeholder="${this.t('searchCommoditiesPlaceholder')}"
+                      oninput="app.handleCommoditySearchInput(this.value)"
+                      onfocus="app.handleCommoditySearchInput(this.value)"
+                      autocomplete="off"
+                      class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-200 rounded-2xl text-xs sm:text-sm font-semibold transition-all outline-none" />
+                    <button type="button" id="btn-clear-search" onclick="app.clearCommoditySearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                  </div>
+                  <!-- Dynamic Voice Search Mic Button with Visual States -->
+                  <button type="button" id="btn-voice-search" onclick="app.toggleVoiceInput('search')"
+                    title="${this.t('voiceSearchBtn')}"
+                    class="touch-target px-3.5 py-2.5 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold flex items-center gap-2 transition-all shadow-xs shrink-0">
+                    <span id="voice-icon-search" class="text-base">🎤</span>
+                    <span id="voice-text-search" class="hidden sm:inline">${this.t('voiceSearchBtn')}</span>
+                  </button>
+                </div>
+
+                <!-- Autocomplete Dropdown -->
+                <div id="search-autocomplete-dropdown" class="hidden absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl z-30 max-h-64 overflow-y-auto p-2 space-y-1"></div>
+
+                <!-- Did you mean... Candidates Banner -->
+                <div id="voice-fuzzy-candidates" class="hidden mt-2.5 p-3 bg-amber-50 border border-amber-200 rounded-2xl animate-[fadeIn_0.2s_ease-out]"></div>
+              </div>
+
+              <!-- Visual Card Grid (16 Diverse Indian Commodities) -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                ${cKeys.map(k => {
+                  const item = COMMODITIES[k];
+                  const isSel = this.selectedCommodity.id === k;
+                  return `
+                    <div onclick="app.selectCommodity('${k}')" class="touch-target p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center text-center ${isSel ? 'border-brand-600 bg-brand-50/80 shadow-sm' : 'border-slate-100 hover:border-brand-200 bg-slate-50/60 hover:bg-white'}">
+                      <span class="text-3xl sm:text-4xl mb-2">${item.icon}</span>
+                      <strong class="text-xs sm:text-sm font-extrabold text-slate-800 leading-tight">
+                        ${this.lang === 'hi' ? item.nameHi : item.nameEn}
+                      </strong>
+                      <span class="text-[10px] text-slate-500 mt-1 capitalize font-medium">${item.category}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      },
+
+      // 2. SIMPLE WIZARD SCREEN (5 QUICK TAPS, 1 PER SCREEN FOR FARMERS)
+      renderSimpleWizardView: function() {
+        const c = this.selectedCommodity;
+        const curStep = this.simpleStep;
+
+        return `
+          <div class="max-w-xl mx-auto space-y-5 animate-[fadeIn_0.2s_ease-out]">
+            <!-- Top Progress Indicator -->
+            <div class="flex items-center justify-between px-2">
+              <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Step ${curStep} of 5</span>
+              <div class="flex space-x-1.5">
+                ${[1,2,3,4,5].map(st => `
+                  <div class="w-6 h-1.5 rounded-full ${st <= curStep ? 'bg-brand-600' : 'bg-slate-200'}"></div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Current Commodity Context Banner -->
+            <div class="bg-brand-50 border border-brand-200 rounded-2xl p-3 flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-2xl">${c.icon}</span>
+                <div>
+                  <h4 class="text-xs font-extrabold text-brand-900">${this.lang==='hi'?c.nameHi:c.nameEn}</h4>
+                  <span class="text-[10px] text-brand-700">Moisture: ${c.moisture}% | Oil: ${c.fat}% | pH: ${c.ph}</span>
+                </div>
+              </div>
+              <button onclick="app.simpleStep = 1; app.render();" class="text-[11px] font-bold text-brand-700 hover:underline">Change</button>
+            </div>
+
+            <!-- CARD BODY BASED ON STEP -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md">
+              <!-- STEP 1: CHANGE PRODUCT IF NEEDED -->
+              ${curStep === 1 ? `
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-extrabold text-slate-800">${this.t('step1Title')}</h2>
+                    <span class="text-xs text-brand-700 font-bold">1 / 5</span>
+                  </div>
+                  ${this.t('step1Subtitle')}</p>
+                  <div class="relative">
+                    <div class="flex items-center gap-2">
+                      <input type="text" id="simple-search-input"
+                        placeholder="${this.t('searchCommoditiesPlaceholder')}"
+                        oninput="app.handleCommoditySearchInput(this.value)"
+                        onfocus="app.handleCommoditySearchInput(this.value)"
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-brand-500" />
+                      <button type="button" onclick="app.toggleVoiceInput('search')" class="p-2 rounded-xl bg-brand-50 text-brand-700 text-xs font-bold shrink-0">🎤</button>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2.5 max-h-[320px] overflow-y-auto pr-1">
+                    ${Object.keys(COMMODITIES).map(k => `
+                      <button onclick="app.selectCommodity('${k}')" class="p-3 rounded-xl border text-left flex items-center space-x-2 ${c.id===k?'border-brand-600 bg-brand-50 font-bold':'border-slate-100 hover:bg-slate-50'}">
+                        <span class="text-xl">${COMMODITIES[k].icon}</span>
+                        <span class="text-xs truncate">${this.lang==='hi'?COMMODITIES[k].nameHi:COMMODITIES[k].nameEn}</span>
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- STEP 2: DESTINATION (WHERE IS IT GOING?) -->
+              ${curStep === 2 ? `
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-extrabold text-slate-800">${this.t('step2Title')}</h2>
+                    <span class="text-xs text-brand-700 font-bold">2 / 5</span>
+                  </div>
+                  <div class="space-y-2.5">
+                    ${[
+                      { id: 'local', icon: '🚜', title: this.t('destLocal'), desc: 'Minimal barrier needed, priority on physical crate & ventilation' },
+                      { id: 'city', icon: '🚛', title: this.t('destCity'), desc: '2–5 days buffer; moderate moisture & oxygen seal' },
+                      { id: 'metro', icon: '🏪', title: this.t('destMetro'), desc: '7–15 days clear pouch for retail shelf presentation' },
+                      { id: 'export', icon: '✈️', title: this.t('destExport'), desc: 'High barrier modified atmosphere vacuum packaging' }
+                    ].map(d => `
+                      <div onclick="app.inputs.destination = '${d.id}'; app.simpleStep = 3; app.render();" class="touch-target p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-center space-x-3 ${this.inputs.destination===d.id ? 'border-brand-600 bg-brand-50 shadow-xs' : 'border-slate-100 hover:border-brand-200 bg-slate-50/50'}">
+                        <span class="text-2xl">${d.icon}</span>
+                        <div>
+                          <strong class="text-xs sm:text-sm font-extrabold text-slate-800 block">${d.title}</strong>
+                          <span class="text-[10px] text-slate-500">${d.desc}</span>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- STEP 3: SHELF LIFE & STORAGE ENVIRONMENT -->
+              ${curStep === 3 ? `
+                <div class="space-y-5">
+                  <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-extrabold text-slate-800">${this.t('step3Title')}</h2>
+                    <span class="text-xs text-brand-700 font-bold">3 / 5</span>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Desired Shelf Life (Days):</label>
+                    <div class="flex gap-2">
+                      ${[3, 7, 15, 30, 90].map(days => `
+                        <button onclick="app.inputs.targetShelfLife = ${days}; app.render();" class="flex-1 py-2 rounded-xl text-xs font-bold border ${this.inputs.targetShelfLife===days ? 'bg-brand-600 text-white border-brand-600' : 'bg-slate-50 text-slate-700 border-slate-200'}">
+                          ${days} d
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Storage Environment:</label>
+                    <div class="space-y-2">
+                      ${[
+                        { id: 'ambient', icon: '🌡️', title: this.t('storageAmbient') },
+                        { id: 'chilled', icon: '❄️', title: this.t('storageChilled') },
+                        { id: 'frozen', icon: '🧊', title: this.t('storageFrozen') }
+                      ].map(s => `
+                        <div onclick="app.inputs.storageType = '${s.id}'; app.render();" class="touch-target p-3 rounded-xl border cursor-pointer flex items-center space-x-2.5 ${this.inputs.storageType===s.id ? 'border-brand-600 bg-brand-50 font-bold text-brand-900' : 'border-slate-200 bg-slate-50/50 text-slate-700'}">
+                          <span>${s.icon}</span>
+                          <span class="text-xs">${s.title}</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- STEP 4: TRANSPORT & SEASON -->
+              ${curStep === 4 ? `
+                <div class="space-y-5">
+                  <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-extrabold text-slate-800">${this.t('step4Title')}</h2>
+                    <span class="text-xs text-brand-700 font-bold">4 / 5</span>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Weather Season Condition:</label>
+                    <div class="grid grid-cols-3 gap-2">
+                      ${[
+                        { id: 'normal', icon: '☀️', label: this.t('seasonNormal') },
+                        { id: 'monsoon', icon: '🌧️', label: this.t('seasonMonsoon') },
+                        { id: 'summer', icon: '🔥', label: this.t('seasonSummer') }
+                      ].map(se => `
+                        <button onclick="app.inputs.season = '${se.id}'; app.render();" class="p-2.5 rounded-xl border text-center flex flex-col items-center ${this.inputs.season===se.id ? 'border-brand-600 bg-brand-50 text-brand-900 font-bold' : 'border-slate-200 text-slate-600'}">
+                          <span class="text-lg mb-1">${se.icon}</span>
+                          <span class="text-[10px] leading-tight">${se.label}</span>
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Transport Mode:</label>
+                    <div class="space-y-2">
+                      ${[
+                        { id: 'tempo', icon: '🛺', label: this.t('transTempo') },
+                        { id: 'covered', icon: '🚚', label: this.t('transCovered') },
+                        { id: 'reefer', icon: '❄️', label: this.t('transReefer') }
+                      ].map(tr => `
+                        <div onclick="app.inputs.transportMode = '${tr.id}'; app.render();" class="touch-target p-3 rounded-xl border cursor-pointer flex items-center space-x-2.5 ${this.inputs.transportMode===tr.id ? 'border-brand-600 bg-brand-50 font-bold text-brand-900' : 'border-slate-200 text-slate-700'}">
+                          <span>${tr.icon}</span>
+                          <span class="text-xs">${tr.label}</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- STEP 5: CURRENT PACKING & BUDGET -->
+              ${curStep === 5 ? `
+                <div class="space-y-5">
+                  <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-extrabold text-slate-800">${this.t('step5Title')}</h2>
+                    <span class="text-xs text-brand-700 font-bold">5 / 5</span>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">What are you using today? (For comparison)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                      ${[
+                        { id: 'none', label: 'None / Open Crates' },
+                        { id: 'thin_poly', label: 'Thin Transparent Polybag' },
+                        { id: 'gunny', label: 'Old Gunny / Jute Sack' },
+                        { id: 'paper_box', label: 'Standard Carton Box' }
+                      ].map(cp => `
+                        <button onclick="app.inputs.currentPacking = '${cp.id}'; app.render();" class="p-2.5 rounded-xl border text-xs text-left ${this.inputs.currentPacking===cp.id ? 'border-brand-600 bg-brand-50 font-bold text-brand-900' : 'border-slate-200 text-slate-700'}">
+                          ${cp.label}
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Cost Priority:</label>
+                    <div class="grid grid-cols-3 gap-2">
+                      ${[
+                        { id: 'low', label: this.t('budgetCost') },
+                        { id: 'balanced', label: this.t('budgetBalanced') },
+                        { id: 'premium', label: this.t('budgetPremium') }
+                      ].map(bg => `
+                        <button onclick="app.inputs.budget = '${bg.id}'; app.render();" class="p-2 rounded-xl border text-[11px] font-bold text-center ${this.inputs.budget===bg.id ? 'bg-brand-600 text-white border-brand-600' : 'bg-slate-50 text-slate-700 border-slate-200'}">
+                          ${bg.label}
+                        </button>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- BOTTOM NAVIGATION BUTTONS -->
+              <div class="flex justify-between items-center mt-7 pt-4 border-t border-slate-100">
+                <button onclick="${curStep > 1 ? 'app.simpleStep--; app.render();' : 'app.navigate(\'home\');'}" class="touch-target px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl transition-colors">
+                  ${this.t('btnBack')}
+                </button>
+
+                ${curStep < 5 ? `
+                  <button onclick="app.simpleStep++; app.render();" class="touch-target px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-600/25 transition-all">
+                    ${this.t('btnNext')}
+                  </button>
+                ` : `
+                  <button onclick="app.triggerAnalysis()" class="touch-target px-6 py-2.5 bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-700 hover:to-emerald-700 text-white text-xs font-black rounded-xl shadow-lg shadow-brand-600/30 flex items-center gap-1.5 transition-all">
+                    <span>⚡</span> <span>${this.t('btnAnalyze')}</span>
+                  </button>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      },
+
+      // 3. EXPERT WIZARD SCREEN (FULL ENGINEERING PARAMETERS ORGANIZED IN 5 COLLAPSIBLE SECTIONS)
+      renderExpertWizardView: function() {
+        const inp = this.inputs;
+        return `
+          <div class="max-w-3xl mx-auto space-y-5 animate-[fadeIn_0.2s_ease-out]">
+            <!-- Header Banner -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-tech-50 border border-tech-100 rounded-2xl p-4 sm:p-5">
+              <div>
+                <h2 class="text-sm sm:text-base font-extrabold text-tech-900">${this.t('expertTitle')}</h2>
+                <p class="text-xs text-tech-700 mt-0.5">${this.t('expertDesc')}</p>
+              </div>
+              <button onclick="app.selectCommodity(app.selectedCommodity.id); app.showToast('Reset to literature baseline values', 'info');" class="px-3 py-1.5 text-xs font-bold text-tech-700 bg-white border border-tech-200 rounded-xl hover:bg-tech-100 transition-colors shadow-xs">
+                ${this.t('btnResetLiterature')}
+              </button>
+            </div>
+
+            <!-- SECTION 1: FOOD COMPOSITION & PRODUCT PROPERTIES -->
+            <details open class="group bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+              <summary class="font-extrabold text-sm sm:text-base text-slate-800 cursor-pointer flex justify-between items-center select-none">
+                <span class="flex items-center gap-2"><span>🧬</span> ${this.t('secProduct')}</span>
+                <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+                <!-- 1. Commodity Type -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Commodity Reference</label>
+                  <select onchange="app.selectCommodity(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                    ${Object.keys(COMMODITIES).map(k => `
+                      <option value="${k}" ${inp.commodityId===k?'selected':''}>${COMMODITIES[k].icon} ${this.lang==='hi'?COMMODITIES[k].nameHi:COMMODITIES[k].nameEn}</option>
+                    `).join('')}
+                  </select>
+                </div>
+
+                <!-- Batch Size (kg) -->
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>${this.t('labelBatchSize')}</span>
+                    <span id="val-batchKg" class="text-brand-700 font-mono">${inp.batchKg} kg</span>
+                  </div>
+                  <input type="range" id="slider-batchKg" min="5" max="1000" step="5" value="${inp.batchKg}"
+                    oninput="app.inputs.batchKg = Number(this.value); document.getElementById('val-batchKg').textContent = this.value + ' kg';" />
+                </div>
+
+                <!-- 2. Moisture Content (%) -->
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>Moisture Content (%)</span>
+                    <span id="val-moisture" class="text-brand-700 font-mono">${inp.moisture}%</span>
+                  </div>
+                  <input type="range" id="slider-moisture" min="0" max="98" value="${inp.moisture}"
+                    oninput="app.inputs.moisture = Number(this.value); document.getElementById('val-moisture').textContent = this.value + '%';" />
+                </div>
+
+                <!-- 3. Oil/Fat Content (%) -->
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>Fat / Oil Content (%)</span>
+                    <span id="val-fat" class="text-amber-700 font-mono">${inp.fat}%</span>
+                  </div>
+                  <input type="range" id="slider-fat" min="0" max="99" value="${inp.fat}"
+                    oninput="app.inputs.fat = Number(this.value); document.getElementById('val-fat').textContent = this.value + '%';" />
+                </div>
+
+                <!-- 4. pH Level -->
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>Product pH Level</span>
+                    <span id="val-ph" class="text-slate-800 font-mono">${inp.ph} pH</span>
+                  </div>
+                  <input type="range" id="slider-ph" min="2.0" max="9.0" step="0.1" value="${inp.ph}"
+                    oninput="app.inputs.ph = Number(this.value); document.getElementById('val-ph').textContent = this.value + ' pH';" />
+                </div>
+
+                <!-- 5. Respiration Rate -->
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>Respiration Rate (Fresh Produce)</span>
+                    <span id="val-respiration" class="text-purple-700 font-mono">${inp.respiration} mg/kg·h</span>
+                  </div>
+                  <input type="range" id="slider-respiration" min="0" max="150" value="${inp.respiration}"
+                    oninput="app.inputs.respiration = Number(this.value); document.getElementById('val-respiration').textContent = this.value + ' mg/kg·h';" />
+                </div>
+              </div>
+            </details>
+
+            <!-- SECTION 2: STORAGE ENVIRONMENT & SHELF LIFE -->
+            <details open class="group bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+              <summary class="font-extrabold text-sm sm:text-base text-slate-800 cursor-pointer flex justify-between items-center select-none">
+                <span class="flex items-center gap-2"><span>❄️</span> ${this.t('secStorage')}</span>
+                <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+                <!-- Storage Category -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Storage Logistics Category</label>
+                  <select onchange="app.setStorageCategory(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                    <option value="ambient" ${inp.storageType==='ambient'?'selected':''}>Ambient Warehouse (25–35°C)</option>
+                    <option value="chilled" ${inp.storageType==='chilled'?'selected':''}>Cold Room (Chilled 2–8°C)</option>
+                    <option value="frozen" ${inp.storageType==='frozen'?'selected':''}>Deep Frozen Logistics (-18°C)</option>
+                  </select>
+                </div>
+
+                <!-- Target Shelf Life -->
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="text-xs font-bold text-slate-700">Target Shelf Life (Days, 1–365)</label>
+                    <button type="button" id="btn-voice-shelf-life" onclick="app.toggleVoiceInput('shelfLife')" title="Speak shelf life" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-brand-50 text-slate-500 hover:text-brand-600 text-xs transition-colors flex items-center gap-1">
+                      <span>🎤</span> <span>${this.lang==='hi'?'बोलें':'Voice'}</span>
+                    </button>
+                  </div>
+                  <input type="number" id="inp-shelf-life" min="1" max="365" value="${inp.targetShelfLife}"
+                    oninput="app.updateShelfLife(this.value)" onchange="app.updateShelfLife(this.value)"
+                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+                </div>
+
+                <!-- Storage Temperature -->
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>Storage Temperature (°C)</span>
+                    <span id="val-storageTemp" class="text-tech-700 font-mono">${inp.storageTemp} °C</span>
+                  </div>
+                  <input type="range" id="slider-storageTemp" min="-18" max="45" value="${inp.storageTemp}"
+                    oninput="app.inputs.storageTemp = Number(this.value); document.getElementById('val-storageTemp').textContent = this.value + ' °C';" />
+                </div>
+
+                <!-- Relative Humidity -->
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>Relative Humidity (% RH)</span>
+                    <span id="val-storageRH" class="text-slate-800 font-mono">${inp.storageRH}%</span>
+                  </div>
+                  <input type="range" id="slider-storageRH" min="30" max="98" value="${inp.storageRH}"
+                    oninput="app.inputs.storageRH = Number(this.value); document.getElementById('val-storageRH').textContent = this.value + '%';" />
+                </div>
+              </div>
+            </details>
+
+            <!-- SECTION 3: LOGISTICS, TRANSPORT & WEATHER -->
+            <details open class="group bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+              <summary class="font-extrabold text-sm sm:text-base text-slate-800 cursor-pointer flex justify-between items-center select-none">
+                <span class="flex items-center gap-2"><span>🚛</span> ${this.t('secLogistics')}</span>
+                <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+                <!-- Destination -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Destination Target</label>
+                  <select onchange="app.inputs.destination = this.value;" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                    <option value="local" ${inp.destination==='local'?'selected':''}>${this.t('destLocal')}</option>
+                    <option value="city" ${inp.destination==='city'?'selected':''}>${this.t('destCity')}</option>
+                    <option value="metro" ${inp.destination==='metro'?'selected':''}>${this.t('destMetro')}</option>
+                    <option value="export" ${inp.destination==='export'?'selected':''}>${this.t('destExport')}</option>
+                  </select>
+                </div>
+
+                <!-- Transport Mode -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Transport Vehicle Logistics</label>
+                  <select onchange="app.inputs.transportMode = this.value;" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                    <option value="tempo" ${inp.transportMode==='tempo'?'selected':''}>${this.t('transTempo')}</option>
+                    <option value="covered" ${inp.transportMode==='covered'?'selected':''}>${this.t('transCovered')}</option>
+                    <option value="reefer" ${inp.transportMode==='reefer'?'selected':''}>${this.t('transReefer')}</option>
+                  </select>
+                </div>
+
+                <!-- Transit Time Hours -->
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>${this.t('labelTransportHours')}</span>
+                    <span id="val-transportHours" class="text-slate-800 font-mono">${inp.transportHours} hrs</span>
+                  </div>
+                  <input type="range" id="slider-transportHours" min="1" max="72" value="${inp.transportHours}"
+                    oninput="app.inputs.transportHours = Number(this.value); document.getElementById('val-transportHours').textContent = this.value + ' hrs';" />
+                </div>
+
+                <!-- Weather Season -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Weather Season Condition</label>
+                  <select onchange="app.inputs.season = this.value;" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                    <option value="normal" ${inp.season==='normal'?'selected':''}>${this.t('seasonNormal')}</option>
+                    <option value="monsoon" ${inp.season==='monsoon'?'selected':''}>${this.t('seasonMonsoon')}</option>
+                    <option value="summer" ${inp.season==='summer'?'selected':''}>${this.t('seasonSummer')}</option>
+                  </select>
+                </div>
+              </div>
+            </details>
+
+            <!-- SECTION 4: COMMERCIAL & CURRENT PACKAGING -->
+            <details class="group bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+              <summary class="font-extrabold text-sm sm:text-base text-slate-800 cursor-pointer flex justify-between items-center select-none">
+                <span class="flex items-center gap-2"><span>💼</span> ${this.t('secBusiness')}</span>
+                <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+                <!-- Budget Priority -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Procurement Cost Priority</label>
+                  <select onchange="app.inputs.budget = this.value;" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                    <option value="low" ${inp.budget==='low'?'selected':''}>${this.t('budgetCost')}</option>
+                    <option value="balanced" ${inp.budget==='balanced'?'selected':''}>${this.t('budgetBalanced')}</option>
+                    <option value="premium" ${inp.budget==='premium'?'selected':''}>${this.t('budgetPremium')}</option>
+                  </select>
+                </div>
+
+                <!-- What you use today -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Current Packaging Practice (Comparison Baseline)</label>
+                  <select onchange="app.inputs.currentPacking = this.value;" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                    <option value="none" ${inp.currentPacking==='none'?'selected':''}>None / Open Loose Crates</option>
+                    <option value="thin_poly" ${inp.currentPacking==='thin_poly'?'selected':''}>Thin Transparent Polybag</option>
+                    <option value="gunny" ${inp.currentPacking==='gunny'?'selected':''}>Old Gunny / Jute Sack</option>
+                    <option value="paper_box" ${inp.currentPacking==='paper_box'?'selected':''}>Standard Cardboard Box</option>
+                  </select>
+                </div>
+
+                <!-- Retail Visibility -->
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-bold text-slate-700 mb-1">${this.t('labelRetailDisplay')}</label>
+                  <select onchange="app.inputs.retailDisplay = (this.value === 'true');" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                    <option value="true" ${inp.retailDisplay?'selected':''}>${this.t('dispClear')}</option>
+                    <option value="false" ${!inp.retailDisplay?'selected':''}>${this.t('dispOpaque')}</option>
+                  </select>
+                </div>
+              </div>
+            </details>
+
+            <!-- SECTION 5: SUSTAINABILITY & PREFERENCES -->
+            <details class="group bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+              <summary class="font-extrabold text-sm sm:text-base text-slate-800 cursor-pointer flex justify-between items-center select-none">
+                <span class="flex items-center gap-2"><span>🌱</span> ${this.t('secSustainability')}</span>
+                <span class="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="pt-3">
+                <label class="block text-xs font-bold text-slate-700 mb-1">${this.t('labelSustainPref')}</label>
+                <select onchange="app.inputs.sustainabilityPref = this.value;" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                  <option value="high" ${inp.sustainabilityPref==='high'?'selected':''}>${this.t('sustainHigh')}</option>
+                  <option value="standard" ${inp.sustainabilityPref==='standard'?'selected':''}>${this.t('sustainStd')}</option>
+                </select>
+              </div>
+            </details>
+
+            <!-- Bottom Action Button -->
+            <div class="pt-4 flex justify-end">
+              <button onclick="app.triggerAnalysis()" class="touch-target px-8 py-3.5 bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-700 hover:to-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-brand-600/30 text-sm flex items-center gap-2 transition-all">
+                <span>⚡</span> <span>${this.t('btnAnalyze')}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      },
+
+      // 4. ANIMATING PIPELINE SCREEN
+      renderAnalyzingView: function() {
+        return `
+          <div class="min-h-[50vh] flex flex-col items-center justify-center text-center p-6 space-y-5 animate-[fadeIn_0.3s_ease-out]">
+            <div class="w-20 h-20 rounded-3xl bg-brand-50 border border-brand-200 flex items-center justify-center text-3xl shadow-lg text-brand-600 animate-spin">
+              ⚙️
+            </div>
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">${this.t('analyzingTitle')}</h2>
+              <p id="pipeline-step-text" class="text-xs sm:text-sm text-brand-700 font-semibold mt-1">
+                ${this.t('stepKin1')}
+              </p>
+            </div>
+            <div class="w-64 h-2.5 bg-slate-200 rounded-full overflow-hidden">
+              <div class="h-full shimmer rounded-full"></div>
+            </div>
+            <p class="text-[11px] text-slate-400 font-mono">Running Q10 Kinetic & ASTM Permeability Matrix</p>
+          </div>
+        `;
+      },
+
+      // 5. RESULTS DASHBOARD (WITH SIMPLE 3 THINGS ABOVE THE FOLD)
+      renderResultsView: function() {
+        if (!this.analysis) return '';
+        const res = this.analysis;
+        const curPlan = res.plans[this.activePlanTab];
+        const simDays = this.calcSimulatedShelfLife(this.simTemp, this.simRH);
+
+        return `
+          <div class="space-y-6 sm:space-y-8 animate-[fadeIn_0.3s_ease-out]">
+            <!-- Top Summary Header -->
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <div>
+                <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold ${res.riskColor} mb-1">
+                  <span>●</span> <span>${res.riskLabel}</span>
+                </div>
+                <h1 class="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  ${this.t('resultsHeading')}
+                </h1>
+                <p class="text-xs text-slate-500 font-medium">${this.t('resultsSubhead')}</p>
+              </div>
+
+              <!-- Action Bar -->
+              <div class="flex items-center space-x-2">
+                <button onclick="app.readResultsAloud()" class="touch-target px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors" title="Read Aloud in Current Language">
+                  <span>🔊</span> <span>${this.t('readAloudBtn')}</span>
+                </button>
+                <button onclick="app.openPassportModal()" class="touch-target px-3.5 py-2 bg-brand-50 hover:bg-brand-100 text-brand-800 border border-brand-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors">
+                  <span>📱</span> <span>Passport QR</span>
+                </button>
+                <button onclick="app.printReport()" class="touch-target px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+                  <span>📄</span> <span>PDF Report</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 4 PLAN SELECTOR TABS -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              ${[
+                { id: 'best', label: this.t('tabBest'), icon: '⭐' },
+                { id: 'cost', label: this.t('tabCost'), icon: '💰' },
+                { id: 'shelf', label: this.t('tabShelf'), icon: '⏳' },
+                { id: 'eco', label: this.t('tabEco'), icon: '🌱' }
+              ].map(tab => `
+                <button onclick="app.activePlanTab = '${tab.id}'; app.render();" class="touch-target p-3 rounded-2xl border-2 text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${this.activePlanTab === tab.id ? 'border-brand-600 bg-brand-50 text-brand-900 shadow-xs' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}">
+                  <span>${tab.icon}</span> <span>${tab.label}</span>
+                </button>
+              `).join('')}
+            </div>
+
+            <!-- ABOVE THE FOLD: 3 CRITICAL THINGS ONLY (GOLDEN RULE) -->
+            <div class="bg-gradient-to-br from-brand-600 via-brand-700 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl space-y-6">
+              <!-- Thing 1: Verdict & Material Card -->
+              <div>
+                <span class="text-xs font-bold text-brand-200 uppercase tracking-wider block mb-1">1. ${this.t('verdictTitle')}</span>
+                <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">
+                  ${this.lang === 'hi' ? curPlan.nameHi : curPlan.nameEn}
+                </h2>
+                <p class="text-xs sm:text-sm text-brand-100 font-mono bg-white/10 px-3 py-1.5 rounded-xl inline-block">
+                  <strong>Structure:</strong> ${curPlan.layers} (${curPlan.thicknessUm} µm)
+                </p>
+              </div>
+
+              <!-- Thing 2: Traffic Light Spoilage Risk & Days -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/10 backdrop-blur-xs rounded-2xl p-4 border border-white/15">
+                <div>
+                  <span class="text-xs text-brand-200 font-bold block mb-1">2. ${this.t('keepsFreshFor')}</span>
+                  <div class="text-3xl sm:text-4xl font-black text-white flex items-baseline gap-1">
+                    ~${res.estimatedShelfLife} <span class="text-sm font-semibold text-brand-200">Days Freshness</span>
+                  </div>
+                  <div class="text-[11px] text-brand-200 mt-1">Storage Condition: ${this.inputs.storageTemp}°C (${this.inputs.storageType})</div>
+                </div>
+
+                <div class="border-t sm:border-t-0 sm:border-l border-white/15 pt-3 sm:pt-0 sm:pl-4">
+                  <span class="text-xs text-brand-200 font-bold block mb-1">${this.t('dominantFailure')}</span>
+                  <div class="text-xs sm:text-sm font-extrabold text-amber-300 leading-snug">
+                    ⚠️ ${res.dominantSpoilage}
+                  </div>
+                  <div class="text-[11px] text-brand-100/80 mt-1">Controlled by: OTR &lt; ${curPlan.otr} cc | WVTR &lt; ${curPlan.wvtr} g</div>
+                </div>
+              </div>
+
+              <!-- Thing 3: Transparent Packaging Costs in Rupees -->
+              <div class="border-t border-white/15 pt-4">
+                <span class="text-xs text-brand-200 font-bold block mb-2">3. Small-Batch Procurement Cost (Indian Market)</span>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div class="p-3 bg-white/10 rounded-xl border border-white/10">
+                    <span class="text-lg sm:text-2xl font-black text-white">₹${curPlan.costPerPack}</span>
+                    <span class="text-[10px] text-brand-200 block">${this.t('costPerPackLabel')}</span>
+                  </div>
+                  <div class="p-3 bg-white/10 rounded-xl border border-white/10">
+                    <span class="text-lg sm:text-2xl font-black text-white">₹${Math.round(curPlan.costPerPack * 100)}</span>
+                    <span class="text-[10px] text-brand-200 block">${this.t('costPer100Label')}</span>
+                  </div>
+                  <div class="p-3 bg-white/10 rounded-xl border border-white/10">
+                    <span class="text-lg sm:text-2xl font-black text-white">₹${Math.round((curPlan.costPerPack / (this.selectedCommodity.typicalPackKg || 1)) * 10) / 10}</span>
+                    <span class="text-[10px] text-brand-200 block">${this.t('costPerKgLabel')}</span>
+                  </div>
+                </div>
+                <div class="text-[10px] text-brand-200 mt-2 text-right">MOQ Guideline: ${curPlan.minOrderQty}</div>
+              </div>
+            </div>
+
+            <!-- LIVE SHELF LIFE SIMULATOR (Q10 Arrhenius Drag Slider - Smooth Non-rebuilding) -->
+            <div class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200 shadow-xs space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-extrabold text-sm sm:text-base text-slate-800 flex items-center gap-1.5">
+                    <span>🌡️</span> <span>${this.t('shelfLifeSimTitle')}</span>
+                  </h3>
+                  <p class="text-xs text-slate-500">${this.t('simNotice')}</p>
+                </div>
+                <div class="text-right">
+                  <span id="val-sim-shelf-life" class="text-xl sm:text-2xl font-black text-brand-700">~${simDays} Days</span>
+                  <span id="val-sim-cond" class="text-[10px] text-slate-400 block">At ${this.simTemp}°C / ${this.simRH}% RH</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>${this.t('simTempLabel')}</span>
+                    <span id="val-sim-temp" class="text-tech-700 font-mono">${this.simTemp} °C</span>
+                  </div>
+                  <input type="range" min="0" max="45" value="${this.simTemp}"
+                    oninput="app.simTemp = Number(this.value); app.updateSimView();" />
+                  <div class="flex justify-between text-[10px] text-slate-400 mt-1"><span>0°C (Cold Storage)</span><span>25°C (Ambient)</span><span>45°C (Extreme Heat)</span></div>
+                </div>
+
+                <div>
+                  <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                    <span>${this.t('simRhLabel')}</span>
+                    <span id="val-sim-rh" class="text-slate-800 font-mono">${this.simRH} %</span>
+                  </div>
+                  <input type="range" min="30" max="98" value="${this.simRH}"
+                    oninput="app.simRH = Number(this.value); app.updateSimView();" />
+                  <div class="flex justify-between text-[10px] text-slate-400 mt-1"><span>30% (Dry Winter)</span><span>65% (Normal)</span><span>95% (Monsoon Seep)</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- "WHAT ARE YOU USING TODAY?" COMPARISON & SPOILAGE COUNTER -->
+            <div class="bg-brand-50/70 border border-brand-200 rounded-3xl p-5 sm:p-7 space-y-4">
+              <h3 class="font-extrabold text-sm sm:text-base text-brand-900 flex items-center gap-1.5">
+                <span>📉</span> <span>${this.t('whatYouUseTodayTitle')}</span>
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div class="bg-white p-4 rounded-2xl border border-brand-100 flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xl">🥬</div>
+                  <div>
+                    <span class="text-xs text-slate-500 font-medium block">${this.t('wasteAvoided')}</span>
+                    <strong class="text-lg font-black text-brand-800">${res.foodSavedKg} kg Saved per ${this.inputs.batchKg}kg Batch</strong>
+                  </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-brand-100 flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xl">💰</div>
+                  <div>
+                    <span class="text-xs text-slate-500 font-medium block">${this.t('rupeesProtected')}</span>
+                    <strong class="text-lg font-black text-amber-800">₹${res.rupeesSaved} Saved per Batch</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WHY THIS / WHY NOT THAT EXPLAINABILITY -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="bg-white rounded-3xl p-5 border border-slate-200 space-y-2">
+                <h4 class="font-extrabold text-xs sm:text-sm text-brand-800 flex items-center gap-1.5">
+                  <span>✅</span> <span>${this.t('whyThisTitle')}</span>
+                </h4>
+                <p class="text-xs text-slate-700 leading-relaxed">${this.lang==='hi'?curPlan.prosHi:curPlan.prosEn}</p>
+                <div class="pt-2 text-[11px] text-slate-500">
+                  <strong>Trade-off to manage:</strong> ${this.lang==='hi'?curPlan.consHi:curPlan.consEn}
+                </div>
+              </div>
+
+              <div class="bg-white rounded-3xl p-5 border border-slate-200 space-y-2">
+                <h4 class="font-extrabold text-xs sm:text-sm text-red-800 flex items-center gap-1.5">
+                  <span>❌</span> <span>${this.t('whyNotTitle')}</span>
+                </h4>
+                <ul class="text-xs text-slate-600 space-y-1.5">
+                  ${res.rejected.slice(0, 3).map(rej => `
+                    <li class="flex items-start gap-1">
+                      <span class="text-red-500 font-bold">•</span>
+                      <span><strong>${this.lang==='hi'?rej.nameHi:rej.nameEn}:</strong> ${rej.reasonsFail[0]||'Permeability mismatch'}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            </div>
+
+            <!-- FULL ENGINEERING & SCIENTIFIC SPEC SHEET (MANDATORY OUTPUTS) -->
+            <div class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200 shadow-xs space-y-4">
+              <h3 class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+                <span>📋</span> <span>${this.t('specsTitle')}</span>
+              </h3>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span class="text-slate-500 block text-[11px] font-semibold">${this.t('specOtr')}</span>
+                  <strong class="text-slate-900 font-mono text-sm">${curPlan.otr} cc/m²·day</strong>
+                  <span class="text-[10px] text-slate-400 block">(ASTM D3985 / 23°C, 0% RH)</span>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span class="text-slate-500 block text-[11px] font-semibold">${this.t('specWvtr')}</span>
+                  <strong class="text-slate-900 font-mono text-sm">${curPlan.wvtr} g/m²·day</strong>
+                  <span class="text-[10px] text-slate-400 block">(ASTM F1249 / 38°C, 90% RH)</span>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span class="text-slate-500 block text-[11px] font-semibold">${this.t('specMap')}</span>
+                  <strong class="text-brand-700 font-mono text-sm">O₂: ${res.mapO2}% | CO₂: ${res.mapCO2}% | N₂: ${res.mapN2}%</strong>
+                  <span class="text-[10px] text-slate-400 block">Equilibrium modified gas flush</span>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span class="text-slate-500 block text-[11px] font-semibold">${this.t('specPerf')}</span>
+                  <strong class="text-purple-700 text-xs">${res.perfSpec}</strong>
+                  <span class="text-[10px] text-slate-400 block">Avoids anaerobiosis & moisture condensation</span>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span class="text-slate-500 block text-[11px] font-semibold">${this.t('specSeal')}</span>
+                  <strong class="text-slate-900 text-xs">${curPlan.sealTemp}</strong>
+                  <span class="text-[10px] text-slate-500 block">${curPlan.sealStrength}</span>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span class="text-slate-500 block text-[11px] font-semibold">${this.t('specMech')}</span>
+                  <strong class="text-slate-900 text-xs">Tensile: ${curPlan.tensileStrength} | Puncture: ${curPlan.punctureStrength}</strong>
+                  <span class="text-[10px] text-slate-400 block">ASTM D882 / ASTM D1709</span>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span class="text-slate-500 block text-[11px] font-semibold">${this.t('specEpr')}</span>
+                  <strong class="text-emerald-800 text-xs">${curPlan.eprCategory}</strong>
+                  <span class="text-[10px] text-slate-400 block">CPCB Plastic Waste Rules 2022</span>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span class="text-slate-500 block text-[11px] font-semibold">${this.t('specRecycle')}</span>
+                  <strong class="text-slate-900 text-xs">${curPlan.recyclability}</strong>
+                  <span class="text-[10px] text-slate-500 block">Compostability: ${curPlan.compostability}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- FSSAI REGULATIONS 2018 COMPLIANCE CHECKLIST -->
+            <div class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200 space-y-3">
+              <h3 class="font-extrabold text-sm sm:text-base text-slate-800 flex items-center gap-2">
+                <span>⚖️</span> <span>${this.t('fssaiChecklistTitle')}</span>
+              </h3>
+              <div class="space-y-2 text-xs">
+                <div class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span class="text-emerald-600 font-bold">✓</span>
+                  <span><strong>IS 9845 Migration Limits:</strong> Overall migration does not exceed 60 mg/kg or 10 mg/dm² of food contact surface.</span>
+                </div>
+                <div class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span class="text-emerald-600 font-bold">✓</span>
+                  <span><strong>IS 15495 Printing Ink Safety:</strong> Inks printed on exterior packaging are non-toxic, lead-free and toluene-free.</span>
+                </div>
+                <div class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <span class="text-emerald-600 font-bold">✓</span>
+                  <span><strong>Statutory Label Display:</strong> Pre-printed area reserved for 14-digit FSSAI License, Veg/Non-Veg logo, MRP, Net Wt, and Expiry.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- GOVERNMENT SCHEMES & SUBSIDIES (PM-FME & ODOP) -->
+            <div class="bg-amber-50/60 border border-amber-200 rounded-3xl p-5 sm:p-7 space-y-2.5">
+              <h3 class="font-extrabold text-sm sm:text-base text-amber-900 flex items-center gap-2">
+                <span>🏛️</span> <span>${this.t('schemeTitle')}</span>
+              </h3>
+              <p class="text-xs text-amber-900/90 leading-relaxed font-medium">${this.t('schemePmFme')}</p>
+              <p class="text-xs text-amber-900/90 leading-relaxed font-medium">${this.t('schemeOdop')}</p>
+            </div>
+          </div>
+        `;
+      },
+
+      // 6. HISTORY SCREEN
+      renderHistoryView: function() {
+        return `
+          <div class="max-w-2xl mx-auto space-y-4 animate-[fadeIn_0.2s_ease-out]">
+            <div class="flex justify-between items-center mb-2">
+              <h2 class="text-xl font-extrabold text-slate-800">Saved Packaging Analyses</h2>
+              <button onclick="app.history = []; localStorage.removeItem('optiwrap_history'); app.render(); app.showToast('History cleared', 'info');" class="text-xs text-red-600 font-bold hover:underline">Clear History</button>
+            </div>
+
+            ${this.history.length === 0 ? `
+              <div class="bg-white rounded-3xl p-10 text-center text-slate-400 space-y-2">
+                <div class="text-4xl">📭</div>
+                <p class="text-xs font-semibold">No saved checks yet. Run your first check to record it locally.</p>
+              </div>
+            ` : `
+              <div class="space-y-2.5">
+                ${this.history.map(item => `
+                  <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex justify-between items-center">
+                    <div>
+                      <h4 class="font-extrabold text-sm text-slate-900">${item.product}</h4>
+                      <p class="text-xs text-slate-500">${item.material} · Shelf life ~${item.shelfLife}d</p>
+                      <span class="text-[10px] text-slate-400">${item.date}</span>
+                    </div>
+                    <div class="text-right">
+                      <span class="text-sm font-extrabold text-brand-700">₹${item.cost}/pack</span>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+        `;
+      }
+    };
+
+    // Initialize application on DOM load
+    window.addEventListener('DOMContentLoaded', () => {
+      app.init();
+    });
+  </script>
+</body>
+</html>
